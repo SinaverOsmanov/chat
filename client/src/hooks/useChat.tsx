@@ -3,7 +3,7 @@ import useWebSocket, { ReadyState } from 'react-use-websocket'
 import { WebSocketHook } from 'react-use-websocket/src/lib/types'
 import { useParams } from 'react-router-dom'
 import { parseMessage } from '../helpers/parseMessage'
-import { moderatorToken } from '../authToken/tokens'
+import {moderatorToken, user2Token, userToken} from '../authToken/tokens'
 import { MessageType, WsMessage } from '../../../common/dto/dto'
 
 export const useChat = () => {
@@ -34,6 +34,25 @@ export const useChat = () => {
 					)
 					if (foundMessage) {
 						foundMessage.likes = data.count
+						setMessageHistory(prev => [...prev])
+					}
+				} else if (type === 'replyToMessage') {
+					const foundMessage = messageHistory.find(
+						message => message._id === data.messageId
+					)
+					if (foundMessage) {
+						foundMessage.answer = {...data}
+						setMessageHistory(prev => [...prev])
+					}
+				} else if (type === 'removeMessage') {
+					const filteredMessage = messageHistory.filter((m)=> m._id !== data.messageId )
+					setMessageHistory(filteredMessage)
+				} else if (type === 'confirmedMessage') {
+					const foundMessage = messageHistory.find(
+						message => message._id === data.messageId
+					)
+					if (foundMessage) {
+						foundMessage.isConfirmed = data.isConfirmed
 						setMessageHistory(prev => [...prev])
 					}
 				}

@@ -41,21 +41,8 @@ const SelectStyle = styled(Select)`
 		width: 100%;
 	}
 `
-//
-// const users = [
-// 	{
-// 		user_id: '6325d80fe06688d15a620dbf',
-// 		email: 'some@email.com',
-// 		name: 'User',
-// 		isModerator: true,
-// 	},
-// 	{
-// 		user_id: '6325d9b2024a807aa45c563a',
-// 		email: 'some2@email.com',
-// 		name: 'User2',
-// 		isModerator: false,
-// 	},
-// ]
+
+const isModerator = true
 
 export function Chat() {
 	const [textMessage, setTextMessage] = useState('')
@@ -70,6 +57,18 @@ export function Chat() {
 
 	function countClick(id: string) {
 		sendMessageClick({ messageId: id }, 'likes')
+	}
+
+	function confirmClick(id: string) {
+		sendMessageClick({messageId:id}, 'confirmedMessage')
+	}
+
+	function replyClick(id: string, reply: string) {
+		sendMessageClick({messageId: id, reply}, 'replyToMessage')
+	}
+
+	function removeClick(id: string) {
+		sendMessageClick({messageId: id}, 'removeMessage')
 	}
 
 	function sendMessage(data: any) {
@@ -92,6 +91,7 @@ export function Chat() {
 									<ul>
 										<li>Все вопросы</li>
 										<li>Мои вопросы</li>
+										{isModerator && <li>Не подтвержденные вопросы</li>}
 									</ul>
 								</FlexRow>
 							</FlexColumn>
@@ -106,7 +106,6 @@ export function Chat() {
 								>
 									<option value="time">По времени</option>
 									<option value="count">По количеству</option>
-									{}
 								</SelectStyle>
 							</FlexColumn>
 						</FlexRow>
@@ -117,7 +116,10 @@ export function Chat() {
 										<MessageWrapper
 											key={message._id}
 											message={message}
+											onRemove={removeClick}
+											onConfirm={confirmClick}
 											onCountLike={countClick}
+											onReply={replyClick}
 										/>
 									)
 								})}
@@ -181,9 +183,28 @@ export function Chat() {
 type MessageWrapperType = {
 	message: MessageType
 	onCountLike: (id: string) => void
+	onConfirm: (id: string) => void
+	onRemove: (id: string) => void
+	onReply: (id: string, reply: string) => void
 }
 
-function MessageWrapper({ message, onCountLike }: MessageWrapperType) {
+function MessageWrapper({ message, onCountLike, onConfirm, onReply, onRemove }: MessageWrapperType) {
+	const [textMessage, setTextMessage] = useState('')
+
+	function confirmedMessage(id:string) {
+		onConfirm(id)
+	}
+
+	function removeMessage(id: string) {
+		onRemove(id)
+	}
+
+	function replyToMessage(id: string) {
+		if(textMessage) {
+			onReply(id, textMessage)
+		}
+	}
+
 	return (
 		<MessageWrapperStyle style={{ marginBottom: 40 }}>
 			<FlexColumn flex={1}>
@@ -214,10 +235,10 @@ function MessageWrapper({ message, onCountLike }: MessageWrapperType) {
 					</FlexColumn>
 				</FlexRow>
 				<FlexRow>{message.text}</FlexRow>
-				{!message.isConfirmed && (
+				{!message.isConfirmed && isModerator && (
 					<FlexRow justifyContent="flex-end">
 						<FlexColumn span={5} flex={1}>
-							<Button style={{ color: 'white' }}>
+							<Button style={{ color: 'white' }} onClick={()=>confirmedMessage(message._id)}>
 								Подтвердить
 							</Button>
 						</FlexColumn>
@@ -227,18 +248,36 @@ function MessageWrapper({ message, onCountLike }: MessageWrapperType) {
 									background: '#e52a2a',
 									color: 'white',
 								}}
+								onClick={()=>removeMessage(message._id)}
 							>
 								Удалить
 							</Button>
 						</FlexColumn>
 					</FlexRow>
 				)}
+				{!message.answer && isModerator && <FlexRow>
+					<FlexColumn>
+					<FlexRow>
+					<Input
+					type="text"
+					value={textMessage}
+					onChange={({ target }) =>
+					setTextMessage(target.value)
+				}
+					/>
+					</FlexRow>
+					<FlexRow>
+					<Button onClick={()=>replyToMessage(message._id)}>Ответить</Button>
+					</FlexRow>
+					</FlexColumn>
+					</FlexRow>}
 				{message.isConfirmed && message.answer && (
 					<FlexRow
 						style={{ marginTop: 16, borderLeft: '4px solid #ccc' }}
 					>
 						<FlexColumn>
 							<FlexRow>
+
 								<FlexColumn>{message.answer.sender}</FlexColumn>
 								<FlexColumn>{'8 / 6 / 2022'}</FlexColumn>
 								{/* this date from field the answer's date  */}
