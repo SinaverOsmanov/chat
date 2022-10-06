@@ -8,12 +8,15 @@ export type ModeratorMessageRecord = {
   _id: ObjectId;
   text: string;
   sender: string;
+  moderatorId: ObjectId;
   created: Date;
+  messageId: ObjectId
 };
 
 export type MessageRecord = {
   _id: ObjectId;
   text: string;
+  senderId: ObjectId;
   sender: string;
   likes: ObjectId[];
   dateConfirmed: Date | null;
