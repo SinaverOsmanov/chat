@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom'
 import { parseMessage } from '../helpers/parseMessage'
 import {moderatorToken, user2Token, userToken} from '../authToken/tokens'
 import { MessageType, WsMessage } from '../../../common/dto/dto'
+import {messagesDto} from "../helpers/transferObject";
 
 export const useChat = () => {
 	const [messageHistory, setMessageHistory] = useState<MessageType[] | []>([])
@@ -19,15 +20,26 @@ export const useChat = () => {
 		memoizedEvent,
 		{
 			onOpen: event => {
-				console.log(event)
+				console.log(event, 'open')
 			},
 			onMessage: event => {
 				const { data, type }: WsMessage = parseMessage(event.data)
 
 				if (type === 'connect') {
-					setMessageHistory(data)
+
+					const messageArrayDto = data.map(messagesDto)
+
+					setMessageHistory(messageArrayDto)
+				} else if (type === 'getMessages') {
+					const messageArrayDto = data.map(messagesDto)
+
+					setMessageHistory(messageArrayDto)
 				} else if (type === 'message') {
-					setMessageHistory(prev => [...prev, data])
+
+					const messageDto = messagesDto(data)
+
+					setMessageHistory(prev => [...prev, messageDto])
+
 				} else if (type === 'likes') {
 					const foundMessage = messageHistory.find(
 						message => message._id === data.messageId
@@ -58,10 +70,11 @@ export const useChat = () => {
 				}
 			},
 			onClose: () => console.log('Closed'),
-			protocols: moderatorToken,
+			protocols: userToken,
 			shouldReconnect: () => true,
 		}
 	)
+
 
 	const handleClickSendMessage = useCallback(
 		(data: any, type = 'message') => {

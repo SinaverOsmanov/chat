@@ -5,6 +5,7 @@ import {MessageRecord} from "./types";
 import {MessageType, WsMessage} from "../common/dto/dto";
 import {ensureTypeDatabase} from "./helpers/mongoDatabase";
 import {sign, verify} from "jsonwebtoken";
+import {messageDto} from "./helpers/messageDto";
 
 const app = App(config.options);
 
@@ -133,21 +134,7 @@ function makeServer(db: Db): TemplatedApp {
                 // when in a collection of the message will a field date with the correct date, need to do right filter
 
                 const mappedMessages: MessageType[] = foundMessages.map(
-                    (message) => ({
-                        ...message,
-                        _id: message._id.toHexString(),
-                        likes: message.likes.length,
-                        senderId: message.senderId.toHexString(),
-                        answer:
-                            message.answer !== null
-                                ? {
-                                    ...message.answer,
-                                    _id: message.answer._id.toHexString(),
-                                    moderatorId: message.answer.moderatorId.toHexString(),
-                                    messageId: message.answer.messageId.toHexString()
-                                }
-                                : null,
-                    })
+                    (message) => messageDto(message)
                 );
 
                 sendMessage(ws, {
@@ -262,6 +249,20 @@ function makeServer(db: Db): TemplatedApp {
                     });
                 }
 
+            } else if (type === 'getMessages') {
+                let foundMessages = []
+                if(data.filter === 'my') {
+                    foundMessages = await messages.find({eventId: eventId, senderId: new ObjectId(clientId)}, {limit: 30}).toArray()
+                } else {
+                    foundMessages = await messages.find({eventId: eventId}, {limit: 30}).toArray()
+                }
+
+                const mappedMessages = foundMessages.map(messageDto)
+
+                sendMessage(ws, {
+                    type: "getMessages",
+                    data: mappedMessages,
+                });
             } else if (type === 'confirmedMessage') {
                 const message = await messages.findOneAndUpdate(
                     {
@@ -270,6 +271,7 @@ function makeServer(db: Db): TemplatedApp {
                     {
                         $set: {
                             isConfirmed: true,
+                            dateConfirmed: new Date()
                         },
                     }
                 );
@@ -314,21 +316,7 @@ function makeServer(db: Db): TemplatedApp {
 
                 const responseData: WsMessage = {
                     type: "message",
-                    data: {
-                        ...responseMessage,
-                        _id: responseMessage._id.toHexString(),
-                        likes: responseMessage.likes.length,
-                        senderId: responseMessage.senderId.toHexString(),
-                        answer:
-                            responseMessage.answer !== null
-                                ? {
-                                    ...responseMessage.answer,
-                                    messageId: responseMessage.answer.messageId.toHexString(),
-                                    moderatorId: responseMessage.answer.moderatorId.toHexString(),
-                                    _id: responseMessage.answer._id.toHexString(),
-                                }
-                                : null,
-                    },
+                    data: messageDto(responseMessage)
                 };
 
                 let eventClients = clients.get(eventId);

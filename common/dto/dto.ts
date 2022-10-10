@@ -45,3 +45,7 @@ export type WsMessage =
     type: 'removeMessage'
     data: {messageId: string}
 }
+| {
+    type: 'getMessages',
+    data: MessageType[]
+}
