@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom'
 import { parseMessage } from '../helpers/parseMessage'
 import {moderatorToken, user2Token, userToken} from '../authToken/tokens'
 import { MessageType, WsMessage } from '../../../common/dto/dto'
-import {messagesDto} from "../helpers/transferObject";
+import {messageDto} from "../helpers/transferObject";
 
 export const useChat = () => {
 	const [messageHistory, setMessageHistory] = useState<MessageType[] | []>([])
@@ -27,18 +27,18 @@ export const useChat = () => {
 
 				if (type === 'connect') {
 
-					const messageArrayDto = data.map(messagesDto)
+					const messageArrayDto = data.map(messageDto)
 
 					setMessageHistory(messageArrayDto)
 				} else if (type === 'getMessages') {
-					const messageArrayDto = data.map(messagesDto)
+					const messageArrayDto = data.map(messageDto)
 
 					setMessageHistory(messageArrayDto)
 				} else if (type === 'message') {
 
-					const messageDto = messagesDto(data)
+					const message = messageDto(data)
 
-					setMessageHistory(prev => [...prev, messageDto])
+					setMessageHistory(prev => [...prev, message])
 
 				} else if (type === 'likes') {
 					const foundMessage = messageHistory.find(
@@ -53,7 +53,7 @@ export const useChat = () => {
 						message => message._id === data.messageId
 					)
 					if (foundMessage) {
-						foundMessage.answer = {...data}
+						foundMessage.answer = {...data, created: new Date(data.created)}
 						setMessageHistory(prev => [...prev])
 					}
 				} else if (type === 'removeMessage') {
@@ -70,7 +70,7 @@ export const useChat = () => {
 				}
 			},
 			onClose: () => console.log('Closed'),
-			protocols: userToken,
+			protocols: user2Token,
 			shouldReconnect: () => true,
 		}
 	)

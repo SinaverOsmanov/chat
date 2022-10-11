@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import Select from './ui/Select'
+// import Select from './ui/Select'
 import React, {useEffect, useState} from 'react'
 import {
     ChatStyle,
@@ -16,8 +16,10 @@ import {useChat} from '../hooks/useChat'
 import {RadioGroup} from './RadioGroup'
 import {MessageType} from '../../../common/dto/dto'
 import {getDateTime} from "../helpers/getDateTime";
+import { LoadingOutlined } from '@ant-design/icons';
 import MessageWrapper from "./MessageWrapper";
-import {Tabs} from "antd";
+import {Tabs, Select, Spin, Radio} from "antd";
+import type {RadioChangeEvent} from "antd";
 
 const SelectStyle = styled(Select)`
   border-radius: 5px;
@@ -47,17 +49,16 @@ const SelectStyle = styled(Select)`
 
 const isModerator = false
 
+const {Option} = Select;
+
 export function Chat() {
     const [textMessage, setTextMessage] = useState('')
-    const [selectedFilter, setSelectedFilter] = useState('time')
-    const [selectedSender, setSelectedSender] = useState('Аноним')
+    const [selectedSort, setSelectedSort] = useState('asc')
+    const [selectedSender, setSelectedSender] = useState('anonym')
     const [tab, setTab] = useState('all')
+    const [messages, setMessages] = useState<MessageType[]>([])
 
     const {messageHistory, connectionStatus, sendMessageClick} = useChat()
-
-    if (connectionStatus === 'Closed') {
-        return <ChatStyle>Loading... </ChatStyle>
-    }
 
     function countClick(id: string) {
         sendMessageClick({messageId: id}, 'likes')
@@ -87,21 +88,55 @@ export function Chat() {
         // {label: 'Не подтвержденные вопросы', key: 'item-3', children: 'Content 3'}
     ]
 
-    function getTab(item:string) {
+    function getTab(item: string) {
         setTab(item)
     }
 
     // TODO: create filter by count likes, asc & desc the date
 
-    useEffect(()=>{
-        if(connectionStatus === 'Open') {
+
+    function sortMessages(messages: MessageType[], type: string) {
+
+        const sortedMessages = [...messages];
+
+        if (type === 'desc') {
+            sortedMessages.sort((messagePrev, messageNext) => messageNext.created.getTime() - messagePrev.created.getTime())
+        } else if (type === 'time') {
+            sortedMessages.sort((messagePrev, messageNext) => messageNext.created.getTime() - messagePrev.created.getTime())
+        } else if (type === 'like') {
+            sortedMessages.sort((messagePrev, messageNext) => messagePrev.likes - messageNext.likes)
+        } else {
+            sortedMessages.sort((messagePrev, messageNext) => messagePrev.created.getTime() - messageNext.created.getTime())
+        }
+
+        return sortedMessages
+    }
+
+    function selectSender(e: RadioChangeEvent) {
+        setSelectedSender(e.target.value);
+    }
+
+    useEffect(() => {
+        const sortedMessage = sortMessages(messageHistory, selectedSort)
+        setMessages(sortedMessage)
+
+    }, [messageHistory, selectedSort])
+
+    useEffect(() => {
+        if (connectionStatus === 'Open') {
             sendMessageClick({filter: tab}, 'getMessages')
         }
     }, [tab])
 
+    if (connectionStatus === 'Connecting') {
+        const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />
+
+        return <ChatStyle><Spin indicator={antIcon} /> </ChatStyle>
+    }
+
     return (
         <ChatStyle>
-            {connectionStatus === 'Open' ? (
+            {connectionStatus === 'Open' && (
                 <FlexRow justifyContent="center">
                     <FlexColumn flex={1}>
                         <FlexRow justifyContent="center">
@@ -110,26 +145,21 @@ export function Chat() {
                         <FlexRow justifyContent="space-between">
                             <FlexColumn>
                                 <FlexRow>
-                                    <Tabs defaultActiveKey={'all'} onChange={getTab} items={items} />
+                                    <Tabs defaultActiveKey={'all'} onChange={getTab} items={items}/>
                                 </FlexRow>
                             </FlexColumn>
                             <FlexColumn>
-                                <SelectStyle
-                                    name="filter"
-                                    id="filter"
-                                    value={selectedFilter}
-                                    onChange={e =>
-                                        setSelectedFilter(e.target.value)
-                                    }
-                                >
-                                    <option value="time">По времени</option>
-                                    <option value="count">По количеству</option>
-                                </SelectStyle>
+                                <Select defaultValue={selectedSort} onChange={setSelectedSort}>
+                                    <Option value="time">По времени</Option>
+                                    <Option value="like">По лайкам</Option>
+                                    <Option value="asc">По возрастанию</Option>
+                                    <Option value="desc">По убыванию</Option>
+                                </Select>
                             </FlexColumn>
                         </FlexRow>
                         <DialogWrapper>
                             <FlexColumn flex={1}>
-                                {messageHistory.map(message => {
+                                {messages.map(message => {
                                     return (
                                         <MessageWrapper
                                             key={message._id}
@@ -153,12 +183,10 @@ export function Chat() {
                                         </FlexRow>
                                     </FlexColumn>
                                     <FlexColumn>
-                                        <RadioGroup
-                                            selectedSender={selectedSender}
-                                            setSelectedSender={
-                                                setSelectedSender
-                                            }
-                                        />
+                                        <Radio.Group onChange={selectSender} value={selectedSender}>
+                                            <Radio value={'person'}>Пользователь</Radio>
+                                            <Radio value={'anonym'}>Анонимно</Radio>
+                                        </Radio.Group>
                                     </FlexColumn>
                                 </FlexRow>
                                 <FlexRow>
@@ -178,7 +206,7 @@ export function Chat() {
                                             <Button
                                                 onClick={() =>
                                                     sendMessage({
-                                                        sender: selectedSender,
+                                                        sender: selectedSender === 'anonym' ? 'Аноним' : 'Пользователь',
                                                         text: textMessage,
                                                     })
                                                 }
@@ -192,7 +220,9 @@ export function Chat() {
                         </FlexRow>
                     </FlexColumn>
                 </FlexRow>
-            ) : (
+            )}
+            {connectionStatus === 'Closed' &&
+            (
                 <FlexRow>Чат закрыт</FlexRow>
             )}
         </ChatStyle>
