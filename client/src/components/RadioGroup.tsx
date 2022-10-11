@@ -30,7 +30,7 @@ export const RadioGroup = ({ selectedSender, setSelectedSender }: any) => {
 					<Radio
 						id="anonymous"
 						name="anonymous"
-						checked={selectedSender === 'Аноним'}
+						checked={selectedSender === 'Anonym'}
 						onChange={onChangeValue}
 					/>
 					Аноним

@@ -14,3 +14,23 @@
     }
 }
 
+.ant-tabs-ink-bar {
+    border-bottom: 4px solid #23D1AE;
+}
+
+.ant-tabs-tab + .ant-tabs-tab {
+    margin: 0;
+}
+
+.ant-tabs-tab {
+    padding: 12px 16px;
+}
+
+.ant-tabs-tab:hover {
+    color: #23D1AE;
+}
+
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: #23D1AE;
+    border-bottom: none;
+}

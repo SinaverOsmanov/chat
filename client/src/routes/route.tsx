@@ -17,7 +17,7 @@ export const router = createBrowserRouter([
 		),
 	},
 	{
-		path: '/:eventId',
+		path: ':eventId',
 		element: <App />,
 	},
 ])

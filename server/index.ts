@@ -6,6 +6,7 @@ import {MessageType, WsMessage} from "../common/dto/dto";
 import {ensureTypeDatabase} from "./helpers/mongoDatabase";
 import {sign, verify} from "jsonwebtoken";
 import {messageDto} from "./helpers/messageDto";
+import {isModerator} from "./helpers/isModerator";
 
 const app = App(config.options);
 
@@ -99,7 +100,6 @@ function makeServer(db: Db): TemplatedApp {
                 const eventId = ws.eventId;
                 const id = ws.wsId;
                 const clientId = ws.clientId;
-                const {moderators} = await ensureTypeDatabase(db);
 
                 let eventClients = clients.get(eventId);
 
@@ -108,15 +108,9 @@ function makeServer(db: Db): TemplatedApp {
                     clients.set(eventId, eventClients);
                 }
 
-                if (!(await moderators.indexExists("moderatorId"))) {
-                    await moderators.createIndex({moderatorId: -1});
-                }
+                const moderator = await isModerator(db, clientId)
 
-                const isModerator = await moderators.findOne({
-                    moderatorId: new ObjectId(clientId),
-                });
-
-                eventClients.set(id, {ws, isModerator: !!isModerator});
+                eventClients.set(id, {ws, isModerator: !!moderator});
 
                 const {messages} = await ensureTypeDatabase(db);
 
@@ -150,6 +144,7 @@ function makeServer(db: Db): TemplatedApp {
             const {data, type} = parseMessage(message);
             const {messages, likes} = await ensureTypeDatabase(db);
             const clientId = ws.clientId;
+            const moderator = await isModerator(db, clientId)
 
             if (type === "likes") {
                 const m = await messages.findOne({_id: new ObjectId(data.messageId)});
@@ -181,7 +176,6 @@ function makeServer(db: Db): TemplatedApp {
                     const likesCount = message.value!.likes.length + 1;
 
                     eventClients.forEach((e) => {
-                        if (e.isModerator) {
                             sendMessage(e.ws, {
                                 type: "likes",
                                 data: {
@@ -189,7 +183,6 @@ function makeServer(db: Db): TemplatedApp {
                                     count: likesCount,
                                 },
                             });
-                        }
                     });
                 }
             } else if (type === 'replyToMessage') {
@@ -201,54 +194,58 @@ function makeServer(db: Db): TemplatedApp {
                     sender: 'Moderator',
                     text: data.reply
                 }
-
-                const message = await messages.findOneAndUpdate(
-                    {
-                        _id: new ObjectId(data.messageId),
-                    },
-                    {
-                        $set: {
-                            answer: replyObject,
+                if(moderator) {
+                    const message = await messages.findOneAndUpdate(
+                        {
+                            _id: new ObjectId(data.messageId),
                         },
-                    }
-                );
-
-                if(!!message.ok) {
-                    let eventClients = getEvent(eventId);
-
-                    if (!eventClients) throw new Error("no event");
-
-
-                    eventClients.forEach((e) => {
-                        sendMessage(e.ws, {
-                            type: "replyToMessage",
-                            data: {
-                                ...replyObject,
-                                _id: replyObject._id.toHexString(),
-                                messageId: data.messageId,
-                                moderatorId: replyObject.moderatorId.toHexString(),
+                        {
+                            $set: {
+                                answer: replyObject,
                             },
-                        });
-                    });
+                        }
+                    );
 
+                    if(!!message.ok) {
+                        let eventClients = getEvent(eventId);
+
+                        if (!eventClients) throw new Error("no event");
+
+
+                        eventClients.forEach((e) => {
+                            sendMessage(e.ws, {
+                                type: "replyToMessage",
+                                data: {
+                                    ...replyObject,
+                                    _id: replyObject._id.toHexString(),
+                                    messageId: data.messageId,
+                                    moderatorId: replyObject.moderatorId.toHexString(),
+                                },
+                            });
+                        });
+
+                    }
                 }
 
             } else if (type === 'removeMessage') {
-                const removed = await messages.deleteOne({_id: new ObjectId(data.messageId)})
+                if(moderator) {
 
-                if(removed.acknowledged) {
-                    let eventClients = getEvent(eventId);
 
-                    if (!eventClients) throw new Error("no event");
+                    const removed = await messages.deleteOne({_id: new ObjectId(data.messageId)})
 
-                    eventClients.forEach((e) => {
-                        sendMessage(e.ws, {
-                            type: "removeMessage",
-                            data: {messageId: data.messageId},
+                    if (removed.acknowledged) {
+                        let eventClients = getEvent(eventId);
+
+                        if (!eventClients) throw new Error("no event");
+
+                        eventClients.forEach((e) => {
+                            sendMessage(e.ws, {
+                                type: "removeMessage",
+                                data: {messageId: data.messageId},
+                            });
                         });
-                    });
+                    }
                 }
-
             } else if (type === 'getMessages') {
                 let foundMessages = []
                 if(data.filter === 'my') {
@@ -264,25 +261,26 @@ function makeServer(db: Db): TemplatedApp {
                     data: mappedMessages,
                 });
             } else if (type === 'confirmedMessage') {
-                const message = await messages.findOneAndUpdate(
-                    {
-                        _id: new ObjectId(data.messageId),
-                    },
-                    {
-                        $set: {
-                            isConfirmed: true,
-                            dateConfirmed: new Date()
+                if(moderator) {
+                    const message = await messages.findOneAndUpdate(
+                        {
+                            _id: new ObjectId(data.messageId),
                         },
-                    }
-                );
+                        {
+                            $set: {
+                                isConfirmed: true,
+                                dateConfirmed: new Date()
+                            },
+                        }
+                    );
 
-                if (!!message.ok) {
-                    let eventClients = getEvent(eventId);
+                    if (!!message.ok) {
+                        let eventClients = getEvent(eventId);
 
-                    if (!eventClients) throw new Error("no event");
+                        if (!eventClients) throw new Error("no event");
 
 
-                    eventClients.forEach((e) => {
+                        eventClients.forEach((e) => {
                             sendMessage(e.ws, {
                                 type: "confirmedMessage",
                                 data: {
@@ -290,7 +288,8 @@ function makeServer(db: Db): TemplatedApp {
                                     isConfirmed: true,
                                 },
                             });
-                    });
+                        });
+                    }
                 }
             } else if (type === "message") {
                 if (!(await messages.indexExists("eventId"))) {
