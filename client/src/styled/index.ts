@@ -1,5 +1,6 @@
 import styled from 'styled-components'
 import React from 'react'
+import {Col, Row} from "antd";
 
 type ColSize = {
 	span?: number
@@ -11,23 +12,16 @@ type CSSFlexRule = Pick<
 	'alignItems' | 'justifyContent' | 'flex' /* add others */
 >
 
-export const FlexRow = styled.div<CSSFlexRule>`
+export const FlexRow = styled(Row)`
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
-
-	justify-content: ${({ justifyContent }) => justifyContent ?? 'flex-start'};
-	align-items: ${({ alignItems }) => alignItems ?? 'stretch'};
+	overflow-wrap: anywhere;
 `
 
 type ColumnProps = CSSFlexRule & ColSize
 
-export const FlexColumn = styled.div<ColumnProps>`
-	display: flex;
-	flex-direction: column;
-
-	${props => `flex:${countFlex(props)};`}
-	${({ offset }) => offset && `margin-left:${getWidthWithPercent(offset)};`}
+export const FlexColumn = styled(Col)`
 `
 
 function countFlex({ flex, span }: ColumnProps): string | number {
@@ -59,9 +53,8 @@ export const DialogWrapper = styled(FlexColumn)`
 	height: 500px;
 	background: #f8f8f8;
 	overflow-y: auto;
-	padding: 25px;
-	margin-top: 30px;
-
+	padding-right: 25px;
+	
 	& {
 		scrollbar-width: auto;
 		scrollbar-color: #00a88e #cccccc;
@@ -69,12 +62,12 @@ export const DialogWrapper = styled(FlexColumn)`
 
 	/* Chrome, Edge, and Safari */
 
-	&::-webkit-scrollbar {
+	&::-webkit-scrollbar {		
 		width: 8px;
 	}
 
 	&::-webkit-scrollbar-track {
-		background: #cccccc;
+		background: rgba(204,204,204,.4);
 	}
 
 	&::-webkit-scrollbar-thumb {
