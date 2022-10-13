@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from "react";
+import React, {useState} from "react";
 import {FlexColumn, FlexRow, MessageWrapperStyle} from "../styled";
 import {getDateTime} from "../helpers/getDateTime";
 import Icon from "./ui/Icon";
@@ -36,24 +36,23 @@ function MessageWrapper({isModerator,message, onCountLike, onConfirm, onReply, o
     return (
         <MessageWrapperStyle style={{marginBottom: 40}}>
             <FlexColumn flex={1}>
-                <FlexRow justifyContent="space-between">
-                    <FlexColumn span={12}>
-                        <FlexRow justifyContent="space-between">
-                            <FlexColumn>{message.sender}</FlexColumn>
+                <FlexRow justify="space-between">
+                    <FlexColumn span={16}>
+                        <FlexRow>
+                            <FlexColumn style={{color:'#666'}}>{message.sender}</FlexColumn>
                             {
                                 message.dateConfirmed && <>
-                                    <FlexColumn>{getDateTime(message.dateConfirmed).newDate}</FlexColumn>
-                                    <FlexColumn>{getDateTime(message.dateConfirmed).time}</FlexColumn>
-
+                                    <FlexColumn style={{color:'#AEAEAE', marginLeft: 15}}>{getDateTime(message.dateConfirmed).newDate}</FlexColumn>
+                                    <FlexColumn style={{color:'#AEAEAE', marginLeft: 15}}>{getDateTime(message.dateConfirmed).time}</FlexColumn>
                                 </>
                             }
                         </FlexRow>
                     </FlexColumn>
-                    <FlexColumn span={12}>
+                    <FlexColumn span={8}>
                         {message.isConfirmed &&
                             <FlexRow
-                                justifyContent={'flex-end'}
-                                alignItems="center"
+                                justify={'end'}
+                                align="middle"
                             >
                                 <FlexColumn>
 								<span onClick={() => onCountLike(message._id)}>
@@ -61,15 +60,15 @@ function MessageWrapper({isModerator,message, onCountLike, onConfirm, onReply, o
 								</span>
                                 </FlexColumn>
                                 {message.likes > 0 && (
-                                    <FlexColumn>{message.likes}</FlexColumn>
+                                    <FlexColumn style={{color:'#AEAEAE'}}>{message.likes}</FlexColumn>
                                 )}
                             </FlexRow>
                         }
                     </FlexColumn>
                 </FlexRow>
-                <FlexRow>{message.text}</FlexRow>
+                <FlexRow style={{color:'#1D1D1B', marginTop: 10}}>{message.text}</FlexRow>
                 {!message.isConfirmed && isModerator && (
-                    <FlexRow justifyContent="flex-end">
+                    <FlexRow justify="end" style={{marginTop: 15}}>
                         <FlexColumn span={5} flex={1}>
                             <Button style={{color: 'white'}} onClick={() => confirmedMessage(message._id)}>
                                 Подтвердить
@@ -88,17 +87,19 @@ function MessageWrapper({isModerator,message, onCountLike, onConfirm, onReply, o
                         </FlexColumn>
                     </FlexRow>
                 )}
-                {!message.answer && isModerator && message.isConfirmed && <FlexRow>
-                    <FlexColumn>
+                {!message.answer && isModerator && message.isConfirmed && <FlexRow style={{marginTop: 10}}>
+                    <FlexColumn flex={1} span={19}>
                         <FlexRow>
                             <Input
-                                type="text"
+                                placeholder={'Введите ответ'}
                                 value={textMessage}
                                 onChange={({target}) =>
                                     setTextMessage(target.value)
                                 }
                             />
                         </FlexRow>
+                    </FlexColumn>
+                    <FlexColumn flex={1} span={4} offset={1}>
                         <FlexRow>
                             <Button onClick={() => replyToMessage(message._id)}>Ответить</Button>
                         </FlexRow>
@@ -106,15 +107,15 @@ function MessageWrapper({isModerator,message, onCountLike, onConfirm, onReply, o
                 </FlexRow>}
                 {message.isConfirmed && message.answer && (
                     <FlexRow
-                        style={{marginTop: 16, borderLeft: '4px solid #ccc'}}
+                        style={{marginTop: 20, borderLeft: '4px solid #ccc'}}
                     >
-                        <FlexColumn span={12}>
-                            <FlexRow justifyContent="space-between">
-                                <FlexColumn>{message.answer.sender}</FlexColumn>
-                                <FlexColumn>{getDateTime(message.answer.created).newDate}</FlexColumn>
-                                <FlexColumn>{getDateTime(message.answer.created).time}</FlexColumn>
+                        <FlexColumn style={{paddingLeft: 10}} flex={1}>
+                            <FlexRow>
+                                <FlexColumn style={{color:'#666'}}>{message.answer.sender}</FlexColumn>
+                                <FlexColumn style={{color:'#AEAEAE', marginLeft: 15}}>{getDateTime(message.answer.created).newDate}</FlexColumn>
+                                <FlexColumn style={{color:'#AEAEAE', marginLeft: 15}}>{getDateTime(message.answer.created).time}</FlexColumn>
                             </FlexRow>
-                            <FlexRow>{message.answer.text}</FlexRow>
+                            <FlexRow style={{color:'#1D1D1B', marginTop: 15}}>{message.answer.text}</FlexRow>
                         </FlexColumn>
                     </FlexRow>
                 )}

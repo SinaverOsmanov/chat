@@ -1,17 +1,14 @@
 import React, {InputHTMLAttributes} from 'react';
 import styled from "styled-components";
+import {Input as InputAntd, InputProps} from 'antd'
 
-type InputType = {
-    label?: string
-}
+type InputPropsType = InputHTMLAttributes<HTMLInputElement> & InputProps
 
-type InputPropsType = React.PropsWithChildren<InputType> & InputHTMLAttributes<HTMLInputElement>
-
-const InputStyle = styled.input`
-
+const InputStyle = styled(InputAntd)`
+  height: 100%;
 `
 
-const Input: React.FC<InputPropsType> = (props) => {
+const Input = (props: InputPropsType) => {
     return (
         <InputStyle {...props}/>
     );

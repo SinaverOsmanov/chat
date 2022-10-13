@@ -1,17 +1,14 @@
-import React, { InputHTMLAttributes } from 'react'
+import React from 'react'
 import styled from 'styled-components'
+import { Radio as RadioAntd } from 'antd'
+import type {RadioGroupProps} from "antd";
 
-type RadioType = {
-	background?: string
-}
+const RadioStyle = styled(RadioAntd.Group)``
 
-type RadioPropsType = React.PropsWithChildren<RadioType> &
-	InputHTMLAttributes<HTMLInputElement>
-
-const RadioStyle = styled.input``
-
-const Radio: React.FC<RadioPropsType> = props => {
-	return <RadioStyle type="radio" {...props} />
+const Radio: React.FC<RadioGroupProps> = ({children, ...props}) => {
+	return <RadioStyle {...props}>
+			{children}
+	</RadioStyle>
 }
 
 export default Radio

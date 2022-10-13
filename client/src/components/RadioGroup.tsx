@@ -1,41 +1,32 @@
-import React, { useState } from 'react'
-import { FlexColumn, FlexRow } from '../styled'
+import React from 'react'
+import {FlexRow} from '../styled'
 import Radio from './ui/Radio'
+import {Radio as RadioButton} from 'antd'
+import {RadioChangeEvent} from "antd";
+import styled from "styled-components";
 
-export const RadioGroup = ({ selectedSender, setSelectedSender }: any) => {
-	const person = 'кто-то'
+type RadioGroupProps = { onChange(e: RadioChangeEvent): void, value: string, isModerator: boolean }
 
-	function onChangeValue(event: React.ChangeEvent<HTMLInputElement>) {
-		const name: string = event.target.name
-		if (name) {
-			setSelectedSender(name === 'name' ? person : 'Аноним')
-		}
-	}
+const RadioStyle = styled(Radio)`
+  .ant-radio-wrapper {
+    margin: 0 0 0 24px;
+  }
+`
 
-	return (
-		<FlexRow>
-			<FlexColumn>
-				<label htmlFor="name">
-					<Radio
-						id="name"
-						name="name"
-						checked={selectedSender === person}
-						onChange={onChangeValue}
-					/>
-					{person}
-				</label>
-			</FlexColumn>
-			<FlexColumn>
-				<label htmlFor="anonymous">
-					<Radio
-						id="anonymous"
-						name="anonymous"
-						checked={selectedSender === 'Anonym'}
-						onChange={onChangeValue}
-					/>
-					Аноним
-				</label>
-			</FlexColumn>
-		</FlexRow>
-	)
+export const RadioGroup = ({onChange, value, isModerator}: RadioGroupProps) => {
+
+    return (
+        <FlexRow>
+            <RadioStyle onChange={onChange} value={value}>
+                {isModerator ?
+                    <RadioButton value={'moderator'}>Модератор</RadioButton>
+                    :
+                    <>
+                        <RadioButton value={'person'}>Пользователь</RadioButton>
+                        <RadioButton value={'anonym'}>Анонимно</RadioButton>
+                    </>
+                }
+            </RadioStyle>
+        </FlexRow>
+    )
 }

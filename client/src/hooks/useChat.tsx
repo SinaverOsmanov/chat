@@ -3,7 +3,7 @@ import useWebSocket, { ReadyState } from 'react-use-websocket'
 import { WebSocketHook } from 'react-use-websocket/src/lib/types'
 import { useParams } from 'react-router-dom'
 import { parseMessage } from '../helpers/parseMessage'
-import {moderatorToken, user2Token, userToken} from '../authToken/tokens'
+import {moderatorToken} from '../authToken/tokens'
 import { MessageType, WsMessage } from '../../../common/dto/dto'
 import {messageDto} from "../helpers/transferObject";
 
@@ -70,7 +70,7 @@ export const useChat = () => {
 				}
 			},
 			onClose: () => console.log('Closed'),
-			protocols: user2Token,
+			protocols: moderatorToken,
 			shouldReconnect: () => true,
 		}
 	)

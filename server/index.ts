@@ -4,7 +4,7 @@ import {Db, MongoClient, ObjectId} from "mongodb";
 import {MessageRecord} from "./types";
 import {MessageType, WsMessage} from "../common/dto/dto";
 import {ensureTypeDatabase} from "./helpers/mongoDatabase";
-import {sign, verify} from "jsonwebtoken";
+import {verify} from "jsonwebtoken";
 import {messageDto} from "./helpers/messageDto";
 import {isModerator} from "./helpers/isModerator";
 
@@ -46,7 +46,7 @@ function makeServer(db: Db): TemplatedApp {
         return true;
     }
 
-    const server = app.ws("/:event", {
+    const serverApp = app.ws("/:event", {
         ...config.behavior,
 
         upgrade: (res, req, context) => {
@@ -142,7 +142,7 @@ function makeServer(db: Db): TemplatedApp {
         message: async (ws, message, isBinary) => {
             const eventId = ws.eventId;
             const {data, type} = parseMessage(message);
-            const {messages, likes} = await ensureTypeDatabase(db);
+            const {messages} = await ensureTypeDatabase(db);
             const clientId = ws.clientId;
             const moderator = await isModerator(db, clientId)
 
@@ -191,7 +191,7 @@ function makeServer(db: Db): TemplatedApp {
                     moderatorId: new ObjectId(clientId),
                     created: new Date(),
                     messageId: new ObjectId(data.messageId),
-                    sender: 'Moderator',
+                    sender: 'Модератор',
                     text: data.reply
                 }
                 if(moderator) {
@@ -247,9 +247,14 @@ function makeServer(db: Db): TemplatedApp {
                     }
                 }
             } else if (type === 'getMessages') {
-                let foundMessages = []
+                let foundMessages;
                 if(data.filter === 'my') {
-                    foundMessages = await messages.find({eventId: eventId, senderId: new ObjectId(clientId)}, {limit: 30}).toArray()
+                    const userObjectId = new ObjectId(clientId)
+                    if(moderator) {
+                        foundMessages = await messages.find({eventId: eventId, $or: [{ 'answer.moderatorId': userObjectId},{senderId: userObjectId}] }, {limit: 30}).toArray()
+                    } else {
+                        foundMessages = await messages.find({eventId: eventId, senderId: userObjectId}, {limit: 30}).toArray()
+                    }
                 } else {
                     foundMessages = await messages.find({eventId: eventId}, {limit: 30}).toArray()
                 }
@@ -302,9 +307,9 @@ function makeServer(db: Db): TemplatedApp {
                     sender: data.sender,
                     text: data.text,
                     likes: [],
-                    dateConfirmed: null,
+                    dateConfirmed: moderator ? new Date() : null,
                     created: new Date(),
-                    isConfirmed: false,
+                    isConfirmed: moderator,
                     answer: null,
                     eventId: eventId,
                 };
@@ -346,7 +351,7 @@ function makeServer(db: Db): TemplatedApp {
             eventClients.delete(ws.wsId);
         },
     });
-    return server;
+    return serverApp;
 }
 
 async function initCollection(db: Db) {
@@ -370,9 +375,9 @@ async function start() {
 
         // await initCollection(mongo)
 
-        const server = makeServer(mongo);
+        const serverApp = makeServer(mongo);
 
-        server.listen(config.config.port, (listenSocket) => {
+        serverApp.listen(config.config.port, (listenSocket) => {
             if (listenSocket) {
                 console.log(`Listening to port ${config.config.port}`);
             }
