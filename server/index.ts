@@ -110,13 +110,13 @@ function makeServer(db: Db): TemplatedApp {
 
                 const moderator = await isModerator(db, clientId)
 
-                eventClients.set(id, {ws, isModerator: !!moderator});
+                eventClients.set(id, {ws, isModerator: moderator});
 
                 const {messages} = await ensureTypeDatabase(db);
 
                 let foundMessages: MessageRecord[];
 
-                if (!!isModerator) {
+                if (moderator) {
                     foundMessages = await messages.find({eventId}).toArray();
                 } else {
                     foundMessages = await messages
@@ -256,7 +256,7 @@ function makeServer(db: Db): TemplatedApp {
                         foundMessages = await messages.find({eventId: eventId, senderId: userObjectId}, {limit: 30}).toArray()
                     }
                 } else {
-                    foundMessages = await messages.find({eventId: eventId}, {limit: 30}).toArray()
+                    foundMessages = await messages.find({eventId: eventId, $or: [ {isConfirmed: true}, {senderId: new ObjectId(clientId)}]}, {limit: 30}).toArray()
                 }
 
                 const mappedMessages = foundMessages.map(messageDto)

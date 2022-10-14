@@ -1,30 +1,39 @@
-
 import React, {useEffect, useState} from 'react'
 import {
-    ChatStyle,
-    DialogWrapper,
     FlexColumn,
-    FlexRow,
-
-} from '../styled'
-import Input from './ui/Input'
-import Button from './ui/Button'
-import Icon from './ui/Icon'
-import {like, send} from '../assets/svg'
-import {useChat} from '../hooks/useChat'
-import {MessageType} from '../../../common/dto/dto'
+    FlexRow
+} from '../../styled'
+import Input from '../ui/Input'
+import Icon from '../ui/Icon'
+import {send} from '../../assets/svg'
+import {useChat} from '../../hooks/useChat'
+import {MessageType} from '../../../../common/dto/dto'
 import {LoadingOutlined} from '@ant-design/icons';
-import MessageWrapper from "./MessageWrapper";
+import MessageWrapper from "../MessageWrapper/MessageWrapper";
 import {Spin, Typography} from "antd";
 import type {RadioChangeEvent} from "antd";
-import {sortMessages} from "../helpers/sortMessages";
-import {RadioGroup} from "./RadioGroup";
-import Select from "./ui/Select";
-import {Tabs} from "./ui/Tabs";
+import {sortMessages} from "../../helpers/sortMessages";
+import {RadioGroup} from "../RadioGroup";
+import Select from "../ui/Select";
+import {Tabs} from "../ui/Tabs";
+import {ChatStyle, DialogLayout, DialogWrapper} from './ChatStyle'
+import { SendButton } from 'components/ui/Button/Button'
 
-const isModerator = true
+const isModerator = false
 
 const {Title} = Typography
+
+const items = [
+    {label: 'Все вопросы', key: 'all', children: ''},
+    {label: 'Мои вопросы', key: 'my', children: ''},
+]
+
+const options = [
+    {value: 'time', title: 'По времени'},
+    {value: 'like', title: 'По лайкам'},
+    {value: 'asc', title: 'По возрастанию'},
+    {value: 'desc', title: 'По убыванию'}
+]
 
 export function Chat() {
     const [textMessage, setTextMessage] = useState('')
@@ -61,20 +70,9 @@ export function Chat() {
             }
 
             sendMessageClick(data)
+            setTextMessage('')
         }
     }
-
-    const items = [
-        {label: 'Все вопросы', key: 'all', children: ''},
-        {label: 'Мои вопросы', key: 'my', children: ''},
-    ]
-
-    const options = [
-        {value: 'time', title: 'По времени'},
-        {value: 'like', title: 'По лайкам'},
-        {value: 'asc', title: 'По возрастанию'},
-        {value: 'desc', title: 'По убыванию'}
-    ]
 
     function getTab(item: string) {
         setTab(item)
@@ -99,7 +97,13 @@ export function Chat() {
     if (connectionStatus === 'Connecting') {
         const antIcon = <LoadingOutlined style={{fontSize: 24}} spin/>
 
-        return <ChatStyle><Spin indicator={antIcon}/> </ChatStyle>
+        return (
+            <ChatStyle>
+                <FlexRow justify='center'>
+                    <Spin indicator={antIcon}/>
+                </FlexRow>
+            </ChatStyle>
+        )
     }
 
     return (
@@ -122,7 +126,7 @@ export function Chat() {
                                 </FlexRow>
                             </FlexColumn>
                         </FlexRow>
-                        <FlexRow style={{padding: 24, background: '#f8f8f8', marginTop: 32}}>
+                        <DialogLayout>
                             <FlexColumn flex={1}>
                                 <DialogWrapper>
                                     <FlexColumn>
@@ -139,11 +143,10 @@ export function Chat() {
                                                 />
                                             )
                                         })}
-
                                     </FlexColumn>
                                 </DialogWrapper>
                             </FlexColumn>
-                        </FlexRow>
+                        </DialogLayout>
                         <FlexRow style={{marginTop: 58}}>
                             <FlexColumn flex={1}>
                                 <FlexRow>
@@ -175,14 +178,11 @@ export function Chat() {
                                     </FlexColumn>
                                     <FlexColumn span={2} offset={1}>
                                         <FlexRow align={'middle'}>
-                                            <Button
-                                                style={{height: 48, width: 48}}
+                                            <SendButton
                                                 onClick={sendMessage}
                                             >
-                                                <FlexRow align={'middle'}>
-                                                    <Icon icon={send}/>
-                                                </FlexRow>
-                                            </Button>
+                                                <Icon icon={send}/>
+                                            </SendButton>
                                         </FlexRow>
                                     </FlexColumn>
                                 </FlexRow>
