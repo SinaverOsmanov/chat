@@ -1,13 +1,13 @@
-import {App, TemplatedApp, WebSocket} from "uWebSockets.js";
+import { App, TemplatedApp, WebSocket } from "uWebSockets.js";
 import config from "./config";
-import {Db, MongoClient, ObjectId} from "mongodb";
-import {MessageRecord} from "./types";
-import {WsMessage} from "../common/dto/dto";
-import {ensureTypeDatabase} from "./helpers/mongoDatabase";
-import {verify} from "jsonwebtoken";
-import {messageDto} from "./helpers/messageDto";
-import {isModerator} from "./helpers/isModerator";
-import {MessageType, TypeWSMessage} from "../common/dto/types";
+import { Db, MongoClient, ObjectId } from "mongodb";
+import { MessageRecord } from "./types";
+import { ConfirmedMessage, LikeMessage, RemoveMessage, WsMessage } from "../common/dto/dto";
+import { ensureTypeDatabase, ApplicationDb } from "./helpers/mongoDatabase";
+import { verify } from "jsonwebtoken";
+import { messageDto } from "./helpers/messageDto";
+import { isModerator } from "./helpers/isModerator";
+import { MessageType, ModeratorMessageType, TypeWSMessage } from "../common/dto/types";
 
 const app = App(config.options);
 
@@ -19,17 +19,275 @@ type TokenDataType = {
     iat: number;
 };
 
+type ConnectionEntry = { ws: WebSocket; session: UserSessionProcessor };
+
+type SendMessage = (message: WsMessage) => Promise<void>;
+
+class UserSessionProcessor {
+    private constructor(private sendMessage: SendMessage, private db: ApplicationDb,
+        private eventGetter: (eventId: string) => Map<string, ConnectionEntry>, private clientId: string, private eventId: string, private isModerator: boolean) {
+
+    }
+
+    static async init(sendMessage: SendMessage, db: Db, clientId: string, eventId: string, eventGetter: (eventId: string) => Map<string, ConnectionEntry>): Promise<UserSessionProcessor> {
+
+        const moderator = await isModerator(db, clientId)
+
+        const { messages } = await ensureTypeDatabase(db);
+
+        let foundMessages: MessageRecord[];
+
+        if (moderator) {
+            foundMessages = await messages.find({ eventId }).toArray();
+        } else {
+            foundMessages = await messages
+                .find({ eventId, $or: [{ isConfirmed: true }, { senderId: new ObjectId(clientId) }] })
+                .limit(30)
+                .toArray();
+        }
+
+        // when in a collection of the message will a field date with the correct date, need to do right filter
+
+        const mappedMessages: MessageType[] = foundMessages.map(
+            (message) => messageDto(message)
+        );
+
+        await sendMessage({
+            type: TypeWSMessage.CONNECT,
+            data: mappedMessages,
+        });
+        return new UserSessionProcessor(sendMessage, await ensureTypeDatabase(db), eventGetter, clientId, eventId, isModerator);
+    }
+
+
+
+    async processMessage(message: WsMessage) {
+        const { data, type } = message;
+
+        if (type === TypeWSMessage.LIKES) {
+            await this.processLike(data);
+        } else if (type === TypeWSMessage.REPLY_TO_MESSAGE) {
+            await this.processReply(data);
+        } else if (type === TypeWSMessage.REMOVE_MESSAGE) {
+            await this.processRemoveMessage(data);
+        } else if (type === TypeWSMessage.GET_MESSAGES) {
+            await this.processGeMessages(data);
+        } else if (type === TypeWSMessage.CONFIRMED_MESSAGE) {
+            await this.processConfirmedMessages(data);
+        } else if (type === TypeWSMessage.MESSAGE) {
+            await this.processSendMessage(data);
+        }
+    }
+    async processSendMessage(data: MessageType) {
+        const { messages } = this.db;
+        if (!(await messages.indexExists("eventId"))) {
+            await messages.createIndex({ eventId: -1 });
+        }
+        const moderator = this.isModerator
+
+        const responseMessage: MessageRecord = {
+            _id: new ObjectId(),
+            senderId: new ObjectId(this.clientId),
+            sender: data.sender,
+            text: data.text,
+            likes: [],
+            dateConfirmed: moderator ? new Date() : null,
+            created: new Date(),
+            isConfirmed: moderator,
+            answer: null,
+            eventId: this.eventId,
+        };
+
+        const { acknowledged } = await messages.insertOne(responseMessage);
+
+        if (!acknowledged) throw new Error("insertOne doesn't acknowledged");
+
+        const responseData: WsMessage = {
+            type: TypeWSMessage.MESSAGE,
+            data: messageDto(responseMessage)
+        };
+
+        const eventClients = this.eventGetter(this.eventId)
+
+        eventClients.forEach((e) => {
+            if (e.session.isModerator || responseData.data.senderId === this.clientId) {
+                this.sendMessage(responseData);
+            }
+        });
+    }
+
+    async processLike(data: LikeMessage) {
+        const { messages } = this.db;
+
+        const m = await messages.findOne({ _id: new ObjectId(data.messageId) });
+
+        const foundIfHaveLike = m?.likes.find(
+            (like) => like.toHexString() === this.clientId
+        );
+
+        if (foundIfHaveLike) {
+            return;
+        }
+
+        const message = await messages.findOneAndUpdate(
+            {
+                _id: new ObjectId(data.messageId),
+            },
+            {
+                $addToSet: {
+                    likes: new ObjectId(this.clientId),
+                },
+            }
+        );
+
+        if (!!message.ok) {
+            let eventClients = this.eventGetter(this.eventId);
+
+            if (!eventClients) throw new Error("no event");
+
+            const likesCount = message.value!.likes.length + 1;
+
+            eventClients.forEach((e) => {
+                this.sendMessage({
+                    type: TypeWSMessage.LIKES,
+                    data: {
+                        messageId: data.messageId,
+                        count: likesCount,
+                    },
+                });
+            });
+        }
+    }
+
+    async processReply(data: ModeratorMessageType) {
+        const { messages } = this.db;
+
+        const replyObject = {
+            _id: new ObjectId(),
+            moderatorId: new ObjectId(this.clientId),
+            created: new Date(),
+            messageId: new ObjectId(data.messageId),
+            sender: 'Модератор',
+            text: data.reply // ?????
+        }
+
+        if (this.isModerator) {
+            const message = await messages.findOneAndUpdate(
+                {
+                    _id: new ObjectId(data.messageId),
+                },
+                {
+                    $set: {
+                        answer: replyObject,
+                    },
+                }
+            );
+
+            if (!!message.ok) {
+                let eventClients = this.eventGetter(this.eventId);
+
+                if (!eventClients) throw new Error("no event");
+
+
+                eventClients.forEach((e) => {
+                    this.sendMessage({
+                        type: TypeWSMessage.REPLY_TO_MESSAGE,
+                        data: {
+                            ...replyObject,
+                            _id: replyObject._id.toHexString(),
+                            messageId: data.messageId,
+                            moderatorId: replyObject.moderatorId.toHexString(),
+                        },
+                    });
+                });
+
+            }
+        }
+    }
+
+    async processRemoveMessage(data: RemoveMessage) {
+        if (!this.isModerator) { return; }
+        const { messages } = this.db;
+
+        const removed = await messages.deleteOne({ _id: new ObjectId(data.messageId) })
+
+        if (removed.acknowledged) {
+            let eventClients = this.eventGetter(this.eventId);
+
+            if (!eventClients) throw new Error("no event");
+
+            eventClients.forEach((e) => {
+                this.sendMessage({
+                    type: TypeWSMessage.REMOVE_MESSAGE,
+                    data: { messageId: data.messageId },
+                });
+            });
+        }
+    }
+
+    async processConfirmedMessages(data: ConfirmedMessage) {
+        if (!this.isModerator) { return; }
+        const { messages } = this.db;
+        const message = await messages.findOneAndUpdate(
+            {
+                _id: new ObjectId(data.messageId),
+            },
+            {
+                $set: {
+                    isConfirmed: true,
+                    dateConfirmed: new Date()
+                },
+            }
+        );
+
+        if (!!message.ok) {
+            let eventClients = this.eventGetter(this.eventId);
+
+            eventClients.forEach((e) => {
+                this.sendMessage({
+                    type: TypeWSMessage.CONFIRMED_MESSAGE,
+                    data: {
+                        messageId: data.messageId,
+                        isConfirmed: true,
+                    },
+                });
+            });
+        }
+    }
+    async processGeMessages(data: MessageType[]) {
+        const { messages } = this.db;
+
+        let foundMessages;
+        if (data.filter === 'my') {
+            const userObjectId = new ObjectId(this.clientId)
+            if (this.isModerator) {
+                foundMessages = await messages.find({ eventId: this.eventId, $or: [{ 'answer.moderatorId': userObjectId }, { senderId: userObjectId }] }, { limit: 30 }).toArray()
+            } else {
+                foundMessages = await messages.find({ eventId: this.eventId, senderId: userObjectId }, { limit: 30 }).toArray()
+            }
+        } else {
+            foundMessages = await messages.find({ eventId: this.eventId, $or: [{ isConfirmed: true }, { senderId: new ObjectId(this.clientId) }] }, { limit: 30 }).toArray()
+        }
+
+        const mappedMessages = foundMessages.map(messageDto)
+
+        this.sendMessage({
+            type: TypeWSMessage.GET_MESSAGES,
+            data: mappedMessages,
+        });
+    }
+
+}
+
 function makeServer(db: Db): TemplatedApp {
-    function sendMessage(ws: WebSocket, message: WsMessage) {
+    function sendMessage(ws: WebSocket, message: WsMessage): Promise<void> { // not sure it is promise or sync return
         const messagesString = JSON.stringify(message);
         ws.send(messagesString);
     }
 
-    function parseMessage(buffer: ArrayBuffer) {
+    function parseMessage(buffer: ArrayBuffer): WsMessage {
         return JSON.parse(Buffer.from(buffer).toString());
     }
-
-    type ConnectionEntry = { ws: WebSocket; isModerator: boolean };
 
     const clients = new Map<string /* event id */,
         Map<string /* socket/client/connection id */, ConnectionEntry>>();
@@ -38,13 +296,9 @@ function makeServer(db: Db): TemplatedApp {
         let eventClients = clients.get(eventId);
         if (!eventClients) {
             console.error("must never happen");
-            return;
+            throw new Error(); // return and check later
         }
         return eventClients;
-    }
-
-    function checkLike(): boolean {
-        return true;
     }
 
     const serverApp = app.ws("/:event", {
@@ -80,14 +334,13 @@ function makeServer(db: Db): TemplatedApp {
                 return;
             }
 
-            const {userId}: TokenDataType = user;
-
+            const { userId }: TokenDataType = user;
             /* This immediately calls open handler, you must not use res after this call */
             res.upgrade(
                 {
                     eventId: req.getParameter(0),
                     wsId: secWebSocketKey,
-                    clientId: userId,
+                    clientId: userId
                 },
                 /* Spell these correctly */
                 secWebSocketKey,
@@ -98,9 +351,7 @@ function makeServer(db: Db): TemplatedApp {
         },
         open: async (ws) => {
             try {
-                const eventId = ws.eventId;
-                const id = ws.wsId;
-                const clientId = ws.clientId;
+                const {id, eventId, clientId} = ws;
 
                 let eventClients = clients.get(eventId);
 
@@ -109,232 +360,19 @@ function makeServer(db: Db): TemplatedApp {
                     clients.set(eventId, eventClients);
                 }
 
-                const moderator = await isModerator(db, clientId)
+                const session = await UserSessionProcessor.init((m) => sendMessage(ws, m), db, clientId, eventId, getEvent);
 
-                eventClients.set(id, {ws, isModerator: moderator});
+                eventClients.set(id, { ws, session });
 
-                const {messages} = await ensureTypeDatabase(db);
-
-                let foundMessages: MessageRecord[];
-
-                if (moderator) {
-                    foundMessages = await messages.find({eventId}).toArray();
-                } else {
-                    foundMessages = await messages
-                        .find({eventId, $or: [ {isConfirmed: true}, {senderId: new ObjectId(clientId)}]})
-                        .limit(30)
-                        .toArray();
-                }
-
-                // when in a collection of the message will a field date with the correct date, need to do right filter
-
-                const mappedMessages: MessageType[] = foundMessages.map(
-                    (message) => messageDto(message)
-                );
-
-                sendMessage(ws, {
-                    type: TypeWSMessage.CONNECT,
-                    data: mappedMessages,
-                });
             } catch (e) {
                 console.log(e);
             }
         },
         message: async (ws, message, isBinary) => {
-            const eventId = ws.eventId;
-            const {data, type} = parseMessage(message);
-            const {messages} = await ensureTypeDatabase(db);
-            const clientId = ws.clientId;
-            const moderator = await isModerator(db, clientId)
-
-            if (type === TypeWSMessage.LIKES) {
-                const m = await messages.findOne({_id: new ObjectId(data.messageId)});
-
-                const foundIfHaveLike = m?.likes.find(
-                    (like) => like.toHexString() === clientId
-                );
-
-                if (foundIfHaveLike) {
-                    return;
-                }
-
-                const message = await messages.findOneAndUpdate(
-                    {
-                        _id: new ObjectId(data.messageId),
-                    },
-                    {
-                        $addToSet: {
-                            likes: new ObjectId(clientId),
-                        },
-                    }
-                );
-
-                if (!!message.ok) {
-                    let eventClients = getEvent(eventId);
-
-                    if (!eventClients) throw new Error("no event");
-
-                    const likesCount = message.value!.likes.length + 1;
-
-                    eventClients.forEach((e) => {
-                            sendMessage(e.ws, {
-                                type: TypeWSMessage.LIKES,
-                                data: {
-                                    messageId: data.messageId,
-                                    count: likesCount,
-                                },
-                            });
-                    });
-                }
-            } else if (type === TypeWSMessage.REPLY_TO_MESSAGE) {
-                const replyObject = {
-                    _id: new ObjectId(),
-                    moderatorId: new ObjectId(clientId),
-                    created: new Date(),
-                    messageId: new ObjectId(data.messageId),
-                    sender: 'Модератор',
-                    text: data.reply
-                }
-
-                if(moderator) {
-                    const message = await messages.findOneAndUpdate(
-                        {
-                            _id: new ObjectId(data.messageId),
-                        },
-                        {
-                            $set: {
-                                answer: replyObject,
-                            },
-                        }
-                    );
-
-                    if(!!message.ok) {
-                        let eventClients = getEvent(eventId);
-
-                        if (!eventClients) throw new Error("no event");
-
-
-                        eventClients.forEach((e) => {
-                            sendMessage(e.ws, {
-                                type: TypeWSMessage.REPLY_TO_MESSAGE,
-                                data: {
-                                    ...replyObject,
-                                    _id: replyObject._id.toHexString(),
-                                    messageId: data.messageId,
-                                    moderatorId: replyObject.moderatorId.toHexString(),
-                                },
-                            });
-                        });
-
-                    }
-                }
-            } else if (type === TypeWSMessage.REMOVE_MESSAGE) {
-                if(moderator) {
-                    const removed = await messages.deleteOne({_id: new ObjectId(data.messageId)})
-
-                    if (removed.acknowledged) {
-                        let eventClients = getEvent(eventId);
-
-                        if (!eventClients) throw new Error("no event");
-
-                        eventClients.forEach((e) => {
-                            sendMessage(e.ws, {
-                                type: TypeWSMessage.REMOVE_MESSAGE,
-                                data: {messageId: data.messageId},
-                            });
-                        });
-                    }
-                }
-            } else if (type === TypeWSMessage.GET_MESSAGES) {
-                let foundMessages;
-                if(data.filter === 'my') {
-                    const userObjectId = new ObjectId(clientId)
-                    if(moderator) {
-                        foundMessages = await messages.find({eventId: eventId, $or: [{ 'answer.moderatorId': userObjectId},{senderId: userObjectId}] }, {limit: 30}).toArray()
-                    } else {
-                        foundMessages = await messages.find({eventId: eventId, senderId: userObjectId}, {limit: 30}).toArray()
-                    }
-                } else {
-                    foundMessages = await messages.find({eventId: eventId, $or: [ {isConfirmed: true}, {senderId: new ObjectId(clientId)}]}, {limit: 30}).toArray()
-                }
-
-                const mappedMessages = foundMessages.map(messageDto)
-
-                sendMessage(ws, {
-                    type: TypeWSMessage.GET_MESSAGES,
-                    data: mappedMessages,
-                });
-            } else if (type === TypeWSMessage.CONFIRMED_MESSAGE) {
-                if(moderator) {
-                    const message = await messages.findOneAndUpdate(
-                        {
-                            _id: new ObjectId(data.messageId),
-                        },
-                        {
-                            $set: {
-                                isConfirmed: true,
-                                dateConfirmed: new Date()
-                            },
-                        }
-                    );
-
-                    if (!!message.ok) {
-                        let eventClients = getEvent(eventId);
-
-                        if (!eventClients) throw new Error("no event");
-
-
-                        eventClients.forEach((e) => {
-                            sendMessage(e.ws, {
-                                type: TypeWSMessage.CONFIRMED_MESSAGE,
-                                data: {
-                                    messageId: data.messageId,
-                                    isConfirmed: true,
-                                },
-                            });
-                        });
-                    }
-                }
-            } else if (type === TypeWSMessage.MESSAGE) {
-                if (!(await messages.indexExists("eventId"))) {
-                    await messages.createIndex({eventId: -1});
-                }
-
-                const responseMessage: MessageRecord = {
-                    _id: new ObjectId(),
-                    senderId: new ObjectId(clientId),
-                    sender: data.sender,
-                    text: data.text,
-                    likes: [],
-                    dateConfirmed: moderator ? new Date() : null,
-                    created: new Date(),
-                    isConfirmed: moderator,
-                    answer: null,
-                    eventId: eventId,
-                };
-
-                const {acknowledged} = await messages.insertOne(responseMessage);
-
-                if (!acknowledged) throw new Error("insertOne doesn't acknowledged");
-
-                const responseData: WsMessage = {
-                    type: TypeWSMessage.MESSAGE,
-                    data: messageDto(responseMessage)
-                };
-
-                let eventClients = clients.get(eventId);
-
-                if (!eventClients) {
-                    console.error("must never happen");
-                    return;
-                }
-
-                eventClients.forEach((e) => {
-                    if (e.isModerator || responseData.data.senderId === clientId) {
-                        sendMessage(e.ws, responseData);
-                    }
-                });
-            }
+            const e = getEvent(ws.eventId);
+            const m = parseMessage(message);
+            const session = e.get(ws.clientId);
+            session?.session.processMessage(m);
         },
         drain: (ws) => {
             console.log("WebSocket backpress ure: " + ws.getBufferedAmount());
