@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import {FlexColumn, FlexRow} from "../../styled";
+import {FlexColumn, FlexRow} from "../../helpers/layoutStyle";
 
 
 export const MessageWrapperStyle = styled(FlexRow)<{ status?: boolean }>`

@@ -1,5 +1,4 @@
 import React, {useState} from "react";
-import {FlexColumn, FlexRow} from "../../styled";
 import {getDateTime} from "../../helpers/getDateTime";
 import Icon from "../ui/Icon";
 import {like} from "../../assets/svg";
@@ -8,6 +7,7 @@ import {MessageType} from "../../../../common/dto/types";
 import {Button, RemoveButton} from "../ui/Button/Button";
 import {MessageWrapperStyle, SenderMessageStyle, TextMessageStyle, DateMessageStyle, ModeratorAnswerStyle} from "./style";
 import {useInput} from "../../hooks/useInput";
+import {FlexColumn, FlexRow } from "helpers/layoutStyle";
 
 type MessageWrapperType = {
     message: MessageType

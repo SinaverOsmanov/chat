@@ -7,10 +7,6 @@ import {useChat} from '../../hooks/useChat'
 import {useInput} from "../../hooks/useInput";
 
 import {sortMessages} from "../../helpers/sortMessages";
-import {
-    FlexColumn,
-    FlexRow
-} from '../../styled'
 
 import MessageWrapper from "../MessageWrapper/MessageWrapper";
 import RadioGroup from "../RadioGroup";
@@ -26,6 +22,7 @@ import {send} from '../../assets/svg'
 import {Style, DialogLayout, DialogWrapper} from './style'
 import {Loading} from "../ui/Loading";
 import {items, options} from "../../constants";
+import {FlexColumn, FlexRow } from 'helpers/layoutStyle';
 
 
 // change logic when will have created auth
