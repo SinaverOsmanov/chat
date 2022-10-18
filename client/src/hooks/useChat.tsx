@@ -1,98 +1,63 @@
-import { useCallback, useMemo, useState } from 'react'
-import useWebSocket, { ReadyState } from 'react-use-websocket'
-import { WebSocketHook } from 'react-use-websocket/src/lib/types'
-import { useParams } from 'react-router-dom'
-import { parseMessage } from '../helpers/parseMessage'
-import {moderatorToken, user2Token, userToken} from '../authToken/tokens'
-import { MessageType, WsMessage } from '../../../common/dto/dto'
-import {messageDto} from "../helpers/transferObject";
+import {useCallback, useMemo, useState} from 'react'
+import useWebSocket, {ReadyState} from 'react-use-websocket'
+import {WebSocketHook} from 'react-use-websocket/src/lib/types'
+import {useParams} from 'react-router-dom'
+import {parseMessage} from '../helpers/parseMessage'
+import {moderatorToken} from '../authToken/tokens'
+import {WsMessage} from '../../../common/dto/dto'
+import {MessageType} from "../../../common/dto/types";
+import {setDataType} from "../helpers/setDataType";
 
 export const useChat = () => {
-	const [messageHistory, setMessageHistory] = useState<MessageType[] | []>([])
-	const { eventId } = useParams()
+    const [messageHistory, setMessageHistory] = useState<MessageType[] | []>([])
+    const {eventId} = useParams()
 
-	const memoizedEvent = useMemo(
-		() => `ws://localhost:8080/${eventId}`,
-		[eventId]
-	)
+    const memoizedEvent = useMemo(
+        () => `ws://localhost:8080/${eventId}`,
+        [eventId]
+    )
 
-	const { readyState, sendJsonMessage }: WebSocketHook = useWebSocket(
-		memoizedEvent,
-		{
-			onOpen: event => {
-				console.log(event, 'open')
-			},
-			onMessage: event => {
-				const { data, type }: WsMessage = parseMessage(event.data)
+    const {readyState, sendJsonMessage}: WebSocketHook = useWebSocket(
+        memoizedEvent,
+        {
+            onOpen: event => {
+                console.log(event, 'open')
+            },
+            onMessage: event => {
+                const {type, data}: WsMessage = parseMessage(event.data)
+                const messages = setDataType({
+                    type,
+                    data,
+                    messages: messageHistory
+                })
 
-				if (type === 'connect') {
+                setMessageHistory(messages)
+            },
+            onClose: () => console.log('Closed'),
+            // When registering, write your token here
+            protocols: moderatorToken,
+            shouldReconnect: () => true,
+        }
+    )
 
-					const messageArrayDto = data.map(messageDto)
+    const sendMessageCallback = useCallback(
+        (data: any, type = 'message') => {
+            sendJsonMessage({type, data})
+        },
+        []
+    )
 
-					setMessageHistory(messageArrayDto)
-				} else if (type === 'getMessages') {
-					const messageArrayDto = data.map(messageDto)
+    const connectionStatus = {
+        [ReadyState.CONNECTING]: 'Connecting',
+        [ReadyState.OPEN]: 'Open',
+        [ReadyState.CLOSING]: 'Closing',
+        [ReadyState.CLOSED]: 'Closed',
+        [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+    }[readyState]
 
-					setMessageHistory(messageArrayDto)
-				} else if (type === 'message') {
-
-					const message = messageDto(data)
-
-					setMessageHistory(prev => [...prev, message])
-
-				} else if (type === 'likes') {
-					const foundMessage = messageHistory.find(
-						message => message._id === data.messageId
-					)
-					if (foundMessage) {
-						foundMessage.likes = data.count
-						setMessageHistory(prev => [...prev])
-					}
-				} else if (type === 'replyToMessage') {
-					const foundMessage = messageHistory.find(
-						message => message._id === data.messageId
-					)
-					if (foundMessage) {
-						foundMessage.answer = {...data, created: new Date(data.created)}
-						setMessageHistory(prev => [...prev])
-					}
-				} else if (type === 'removeMessage') {
-					const filteredMessage = messageHistory.filter((m)=> m._id !== data.messageId )
-					setMessageHistory(filteredMessage)
-				} else if (type === 'confirmedMessage') {
-					const foundMessage = messageHistory.find(
-						message => message._id === data.messageId
-					)
-					if (foundMessage) {
-						foundMessage.isConfirmed = data.isConfirmed
-						setMessageHistory(prev => [...prev])
-					}
-				}
-			},
-			onClose: () => console.log('Closed'),
-			protocols: userToken,
-			shouldReconnect: () => true,
-		}
-	)
-
-	const handleClickSendMessage = useCallback(
-		(data: any, type = 'message') => {
-			sendJsonMessage({ type, data })
-		},
-		[]
-	)
-
-	const connectionStatus = {
-		[ReadyState.CONNECTING]: 'Connecting',
-		[ReadyState.OPEN]: 'Open',
-		[ReadyState.CLOSING]: 'Closing',
-		[ReadyState.CLOSED]: 'Closed',
-		[ReadyState.UNINSTANTIATED]: 'Uninstantiated',
-	}[readyState]
-
-	return {
-		sendMessageClick: handleClickSendMessage,
-		connectionStatus,
-		messageHistory,
-	}
+    return {
+        sendMessageClick: sendMessageCallback,
+        connectionStatus,
+        messageHistory,
+    }
 }

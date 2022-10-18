@@ -1,86 +1,65 @@
-import React, {useEffect, useState} from 'react'
+import React, {useCallback, useEffect, useState} from 'react'
+
+import type {RadioChangeEvent} from "antd";
+import {Typography} from "antd";
+
+import {useChat} from '../../hooks/useChat'
+import {useInput} from "../../hooks/useInput";
+
+import {sortMessages} from "../../helpers/sortMessages";
 import {
     FlexColumn,
     FlexRow
 } from '../../styled'
-import Input from '../ui/Input'
-import Icon from '../ui/Icon'
-import {send} from '../../assets/svg'
-import {useChat} from '../../hooks/useChat'
-import {MessageType} from '../../../../common/dto/dto'
-import {LoadingOutlined} from '@ant-design/icons';
-import MessageWrapper from "../MessageWrapper/MessageWrapper";
-import {Spin, Typography} from "antd";
-import type {RadioChangeEvent} from "antd";
-import {sortMessages} from "../../helpers/sortMessages";
-import {RadioGroup} from "../RadioGroup";
-import Select from "../ui/Select";
-import {Tabs} from "../ui/Tabs";
-import {ChatStyle, DialogLayout, DialogWrapper} from './ChatStyle'
-import { SendButton } from 'components/ui/Button/Button'
 
-const isModerator = false
+import MessageWrapper from "../MessageWrapper/MessageWrapper";
+import RadioGroup from "../RadioGroup";
+
+import Select from "../ui/Select/Select";
+import Input from '../ui/Input/Input'
+import Tabs from "../ui/Tabs";
+import {SendButton} from "../ui/Button/Button";
+import Icon from '../ui/Icon'
+
+import {MessageType} from '../../../../common/dto/types'
+import {send} from '../../assets/svg'
+import {Style, DialogLayout, DialogWrapper} from './style'
+import {Loading} from "../ui/Loading";
+import {items, options} from "../../constants";
+
+
+// change logic when will have created auth
+const isModerator = true
 
 const {Title} = Typography
 
-const items = [
-    {label: 'Все вопросы', key: 'all', children: ''},
-    {label: 'Мои вопросы', key: 'my', children: ''},
-]
-
-const options = [
-    {value: 'time', title: 'По времени'},
-    {value: 'like', title: 'По лайкам'},
-    {value: 'asc', title: 'По возрастанию'},
-    {value: 'desc', title: 'По убыванию'}
-]
-
 export function Chat() {
-    const [textMessage, setTextMessage] = useState('')
     const [selectedSort, setSelectedSort] = useState('asc')
     const [selectedSender, setSelectedSender] = useState(isModerator ? 'moderator' : 'anonym')
     const [tab, setTab] = useState('all')
     const [messages, setMessages] = useState<MessageType[]>([])
+    const message = useInput('')
 
     const {messageHistory, connectionStatus, sendMessageClick} = useChat()
 
-    function countClick(id: string) {
-        sendMessageClick({messageId: id}, 'likes')
-    }
-
-    function confirmClick(id: string) {
-        sendMessageClick({messageId: id}, 'confirmedMessage')
-    }
-
-    function replyClick(id: string, reply: string) {
-        sendMessageClick({messageId: id, reply}, 'replyToMessage')
-    }
-
-    function removeClick(id: string) {
-        sendMessageClick({messageId: id}, 'removeMessage')
-    }
-
     function sendMessage() {
-        if (textMessage !== '') {
+        if (message.value !== '') {
             const senderName = selectedSender === 'anonym' ? 'Аноним' : 'Пользователь'
 
             const data = {
                 sender: isModerator ? 'Модератор' : senderName,
-                text: textMessage,
+                text: message.value,
             }
 
             sendMessageClick(data)
-            setTextMessage('')
+            message.onReset()
         }
     }
 
-    function getTab(item: string) {
-        setTab(item)
-    }
+    const changeTabCallback = useCallback((item: string) => setTab(item), [])
+    const selectedSortCallback = useCallback((event: React.SetStateAction<string>) => setSelectedSort(event), [])
+    const selectedSenderCallback = useCallback(({target}: RadioChangeEvent) => setSelectedSender(target.value), [])
 
-    function selectSender(e: RadioChangeEvent) {
-        setSelectedSender(e.target.value);
-    }
 
     useEffect(() => {
         const sortedMessage = sortMessages(messageHistory, selectedSort)
@@ -94,22 +73,20 @@ export function Chat() {
         }
     }, [tab])
 
-    if (connectionStatus === 'Connecting') {
-        const antIcon = <LoadingOutlined style={{fontSize: 24}} spin/>
+    useEffect(()=>{
+        const el:Element | null = document.querySelector('.scroll')
+        const scroll: Element | null = document.querySelector('.scrollHeight')
 
-        return (
-            <ChatStyle>
-                <FlexRow justify='center'>
-                    <Spin indicator={antIcon}/>
-                </FlexRow>
-            </ChatStyle>
-        )
-    }
+        if(!!el && !!scroll) {
+            el.scrollTo(0, scroll.scrollHeight)
+        }
+
+    },[messages.length])
 
     return (
-        <ChatStyle>
-            {connectionStatus === 'Open' && (
-                <FlexRow justify="center">
+        <Style>
+            <FlexRow justify="center">
+                {connectionStatus === 'Open' && (
                     <FlexColumn flex={1}>
                         <FlexRow justify="center" style={{marginBottom: 24}}>
                             <Title style={{margin: 0}} level={2}>Вопросы</Title>
@@ -117,28 +94,26 @@ export function Chat() {
                         <FlexRow justify="space-between">
                             <FlexColumn>
                                 <FlexRow>
-                                    <Tabs defaultActiveKey={'all'} onChange={getTab} items={items}/>
+                                    <Tabs defaultActiveKey={'all'} onChange={changeTabCallback} items={items}/>
                                 </FlexRow>
                             </FlexColumn>
                             <FlexColumn>
                                 <FlexRow>
-                                    <Select defaultValue={selectedSort} onChange={setSelectedSort} options={options}/>
+                                    <Select defaultValue={selectedSort} onChange={selectedSortCallback}
+                                            options={options}/>
                                 </FlexRow>
                             </FlexColumn>
                         </FlexRow>
                         <DialogLayout>
                             <FlexColumn flex={1}>
-                                <DialogWrapper>
-                                    <FlexColumn>
+                                <DialogWrapper className={'scroll'}>
+                                    <FlexColumn className={'scrollHeight'}>
                                         {messages.map(message => {
                                             return (
                                                 <MessageWrapper
                                                     key={message._id}
                                                     message={message}
-                                                    onRemove={removeClick}
-                                                    onConfirm={confirmClick}
-                                                    onCountLike={countClick}
-                                                    onReply={replyClick}
+                                                    onSendMessage={sendMessageClick}
                                                     isModerator={isModerator}
                                                 />
                                             )
@@ -147,7 +122,7 @@ export function Chat() {
                                 </DialogWrapper>
                             </FlexColumn>
                         </DialogLayout>
-                        <FlexRow style={{marginTop: 58}}>
+                        <FlexRow>
                             <FlexColumn flex={1}>
                                 <FlexRow>
                                     <FlexColumn>
@@ -157,7 +132,7 @@ export function Chat() {
                                     </FlexColumn>
                                     <FlexColumn>
                                         <RadioGroup
-                                            onChange={selectSender}
+                                            onChange={selectedSenderCallback}
                                             value={selectedSender}
                                             isModerator={isModerator}
                                         />
@@ -167,12 +142,8 @@ export function Chat() {
                                     <FlexColumn span={21}>
                                         <FlexRow style={{height: 48}}>
                                             <Input
-                                                style={{border: '2px solid #ccc'}}
                                                 placeholder={'Введите вопрос'}
-                                                value={textMessage}
-                                                onChange={({target}) =>
-                                                    setTextMessage(target.value)
-                                                }
+                                                {...message}
                                             />
                                         </FlexRow>
                                     </FlexColumn>
@@ -189,12 +160,10 @@ export function Chat() {
                             </FlexColumn>
                         </FlexRow>
                     </FlexColumn>
-                </FlexRow>
-            )}
-            {connectionStatus === 'Closed' &&
-                (
-                    <FlexRow>Чат закрыт</FlexRow>
                 )}
-        </ChatStyle>
+                {connectionStatus === 'Closed' && 'Чат закрыт'}
+                {connectionStatus === 'Connection' && <Loading/>}
+            </FlexRow>
+        </Style>
     )
 }

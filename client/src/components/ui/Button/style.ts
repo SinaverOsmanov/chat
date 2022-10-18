@@ -3,7 +3,7 @@ import {Button as ButtonAntd} from "antd";
 
 type ButtonAntdStyle = {background?: string}
 
-const ButtonStyle = styled(ButtonAntd)<ButtonAntdStyle>`
+const Style = styled(ButtonAntd)<ButtonAntdStyle>`
 	border: none;
 	background: #00a88e;
 	border-radius: 8px;
@@ -31,4 +31,4 @@ const ButtonStyle = styled(ButtonAntd)<ButtonAntdStyle>`
 //   height: 48px;
 // `
 
-export {ButtonStyle}
+export {Style}

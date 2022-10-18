@@ -5,10 +5,10 @@ import type {RadioGroupProps} from "antd";
 
 const RadioStyle = styled(RadioAntd.Group)``
 
-const Radio: React.FC<RadioGroupProps> = ({children, ...props}) => {
+const RadioGroupWrapper: React.FC<RadioGroupProps> = ({children, ...props}) => {
 	return <RadioStyle {...props}>
 			{children}
 	</RadioStyle>
 }
 
-export default Radio
+export default RadioGroupWrapper

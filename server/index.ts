@@ -2,11 +2,12 @@ import {App, TemplatedApp, WebSocket} from "uWebSockets.js";
 import config from "./config";
 import {Db, MongoClient, ObjectId} from "mongodb";
 import {MessageRecord} from "./types";
-import {MessageType, WsMessage} from "../common/dto/dto";
+import {WsMessage} from "../common/dto/dto";
 import {ensureTypeDatabase} from "./helpers/mongoDatabase";
 import {verify} from "jsonwebtoken";
 import {messageDto} from "./helpers/messageDto";
 import {isModerator} from "./helpers/isModerator";
+import {MessageType, TypeWSMessage} from "../common/dto/types";
 
 const app = App(config.options);
 
@@ -132,7 +133,7 @@ function makeServer(db: Db): TemplatedApp {
                 );
 
                 sendMessage(ws, {
-                    type: "connect",
+                    type: TypeWSMessage.CONNECT,
                     data: mappedMessages,
                 });
             } catch (e) {
@@ -146,7 +147,7 @@ function makeServer(db: Db): TemplatedApp {
             const clientId = ws.clientId;
             const moderator = await isModerator(db, clientId)
 
-            if (type === "likes") {
+            if (type === TypeWSMessage.LIKES) {
                 const m = await messages.findOne({_id: new ObjectId(data.messageId)});
 
                 const foundIfHaveLike = m?.likes.find(
@@ -177,7 +178,7 @@ function makeServer(db: Db): TemplatedApp {
 
                     eventClients.forEach((e) => {
                             sendMessage(e.ws, {
-                                type: "likes",
+                                type: TypeWSMessage.LIKES,
                                 data: {
                                     messageId: data.messageId,
                                     count: likesCount,
@@ -185,7 +186,7 @@ function makeServer(db: Db): TemplatedApp {
                             });
                     });
                 }
-            } else if (type === 'replyToMessage') {
+            } else if (type === TypeWSMessage.REPLY_TO_MESSAGE) {
                 const replyObject = {
                     _id: new ObjectId(),
                     moderatorId: new ObjectId(clientId),
@@ -194,6 +195,7 @@ function makeServer(db: Db): TemplatedApp {
                     sender: 'Модератор',
                     text: data.reply
                 }
+
                 if(moderator) {
                     const message = await messages.findOneAndUpdate(
                         {
@@ -214,7 +216,7 @@ function makeServer(db: Db): TemplatedApp {
 
                         eventClients.forEach((e) => {
                             sendMessage(e.ws, {
-                                type: "replyToMessage",
+                                type: TypeWSMessage.REPLY_TO_MESSAGE,
                                 data: {
                                     ...replyObject,
                                     _id: replyObject._id.toHexString(),
@@ -226,11 +228,8 @@ function makeServer(db: Db): TemplatedApp {
 
                     }
                 }
-
-            } else if (type === 'removeMessage') {
+            } else if (type === TypeWSMessage.REMOVE_MESSAGE) {
                 if(moderator) {
-
-
                     const removed = await messages.deleteOne({_id: new ObjectId(data.messageId)})
 
                     if (removed.acknowledged) {
@@ -240,13 +239,13 @@ function makeServer(db: Db): TemplatedApp {
 
                         eventClients.forEach((e) => {
                             sendMessage(e.ws, {
-                                type: "removeMessage",
+                                type: TypeWSMessage.REMOVE_MESSAGE,
                                 data: {messageId: data.messageId},
                             });
                         });
                     }
                 }
-            } else if (type === 'getMessages') {
+            } else if (type === TypeWSMessage.GET_MESSAGES) {
                 let foundMessages;
                 if(data.filter === 'my') {
                     const userObjectId = new ObjectId(clientId)
@@ -262,10 +261,10 @@ function makeServer(db: Db): TemplatedApp {
                 const mappedMessages = foundMessages.map(messageDto)
 
                 sendMessage(ws, {
-                    type: "getMessages",
+                    type: TypeWSMessage.GET_MESSAGES,
                     data: mappedMessages,
                 });
-            } else if (type === 'confirmedMessage') {
+            } else if (type === TypeWSMessage.CONFIRMED_MESSAGE) {
                 if(moderator) {
                     const message = await messages.findOneAndUpdate(
                         {
@@ -287,7 +286,7 @@ function makeServer(db: Db): TemplatedApp {
 
                         eventClients.forEach((e) => {
                             sendMessage(e.ws, {
-                                type: "confirmedMessage",
+                                type: TypeWSMessage.CONFIRMED_MESSAGE,
                                 data: {
                                     messageId: data.messageId,
                                     isConfirmed: true,
@@ -296,7 +295,7 @@ function makeServer(db: Db): TemplatedApp {
                         });
                     }
                 }
-            } else if (type === "message") {
+            } else if (type === TypeWSMessage.MESSAGE) {
                 if (!(await messages.indexExists("eventId"))) {
                     await messages.createIndex({eventId: -1});
                 }
@@ -319,7 +318,7 @@ function makeServer(db: Db): TemplatedApp {
                 if (!acknowledged) throw new Error("insertOne doesn't acknowledged");
 
                 const responseData: WsMessage = {
-                    type: "message",
+                    type: TypeWSMessage.MESSAGE,
                     data: messageDto(responseMessage)
                 };
 

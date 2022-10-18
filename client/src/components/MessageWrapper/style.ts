@@ -20,12 +20,16 @@ export const SenderMessageStyle = styled(FlexColumn)`
 
 export const TextMessageStyle = styled(FlexRow)`
   color: #1D1D1B;
-  margin-top: 15px;
+  margin: 15px 0;
   font-weight: 500
 `
 
 export const ModeratorAnswerStyle = styled(FlexRow)`
   margin-top: 20px; 
   border-left: 4px solid #ccc;
+  
+  & > div {
+    padding-left: 10px;
+  }
 `
 
