@@ -3,35 +3,40 @@ import {FlexColumn, FlexRow} from "../../styled";
 import {getDateTime} from "../../helpers/getDateTime";
 import Icon from "../ui/Icon";
 import {like} from "../../assets/svg";
-import Input from "../ui/Input";
-import {MessageType} from "../../../../common/dto/dto";
+import Input from "../ui/Input/Input";
+import {MessageType} from "../../../../common/dto/types";
 import {Button, RemoveButton} from "../ui/Button/Button";
-import {MessageWrapperStyle, SenderMessageStyle, TextMessageStyle, DateMessageStyle, ModeratorAnswerStyle} from "./MessageStyle";
+import {MessageWrapperStyle, SenderMessageStyle, TextMessageStyle, DateMessageStyle, ModeratorAnswerStyle} from "./style";
+import {useInput} from "../../hooks/useInput";
 
 type MessageWrapperType = {
     message: MessageType
-    onCountLike: (id: string) => void
-    onConfirm: (id: string) => void
-    onRemove: (id: string) => void
-    onReply: (id: string, reply: string) => void
+    onSendMessage: (data: any, type: string) => void
     isModerator: boolean
 }
 
-function MessageWrapper({isModerator, message, onCountLike, onConfirm, onReply, onRemove}: MessageWrapperType) {
-    const [textMessage, setTextMessage] = useState('')
+function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperType) {
+    const answer = useInput('')
 
     function confirmedMessage(id: string) {
-        onConfirm(id)
+        onSendMessage({messageId: id}, 'confirmedMessage')
     }
 
     function removeMessage(id: string) {
-        onRemove(id)
+        onSendMessage({messageId: id}, 'removeMessage')
     }
 
     function replyToMessage(id: string) {
-        if (textMessage) {
-            onReply(id, textMessage)
+
+        const {value} = answer
+
+        if (value) {
+            onSendMessage({messageId: id, reply: value}, 'replyToMessage')
         }
+    }
+
+    function countClick(id: string) {
+        onSendMessage({messageId: id}, 'likes')
     }
 
     return (
@@ -59,7 +64,7 @@ function MessageWrapper({isModerator, message, onCountLike, onConfirm, onReply, 
                                 align="middle"
                             >
                                 <FlexColumn>
-								<span onClick={() => onCountLike(message._id)}>
+								<span onClick={() => countClick(message._id)}>
 									<Icon icon={like}/>
 								</span>
                                 </FlexColumn>
@@ -72,18 +77,18 @@ function MessageWrapper({isModerator, message, onCountLike, onConfirm, onReply, 
                 </FlexRow>
                 <TextMessageStyle>{message.text}</TextMessageStyle>
                 {!message.isConfirmed && isModerator && (
-                    <FlexRow justify="end" style={{marginTop: 15}}>
+                    <FlexRow justify="end">
                         <FlexColumn span={5} flex={1}>
                             <Button onClick={() => confirmedMessage(message._id)}>
                                 Подтвердить
                             </Button>
                         </FlexColumn>
                         <FlexColumn span={5} flex={1} offset={1}>
-                            <Button
+                            <RemoveButton
                                 onClick={() => removeMessage(message._id)}
                             >
                                 Удалить
-                            </Button>
+                            </RemoveButton>
                         </FlexColumn>
                     </FlexRow>
                 )}
@@ -92,10 +97,7 @@ function MessageWrapper({isModerator, message, onCountLike, onConfirm, onReply, 
                         <FlexRow>
                             <Input
                                 placeholder={'Введите ответ'}
-                                value={textMessage}
-                                onChange={({target}) =>
-                                    setTextMessage(target.value)
-                                }
+                                {...answer}
                             />
                         </FlexRow>
                     </FlexColumn>
@@ -107,7 +109,7 @@ function MessageWrapper({isModerator, message, onCountLike, onConfirm, onReply, 
                 </FlexRow>}
                 {message.isConfirmed && message.answer && (
                     <ModeratorAnswerStyle>
-                        <FlexColumn style={{paddingLeft: 10}} flex={1}>
+                        <FlexColumn flex={1}>
                             <FlexRow>
                                 <SenderMessageStyle>{message.answer.sender}</SenderMessageStyle>
                                 <DateMessageStyle>

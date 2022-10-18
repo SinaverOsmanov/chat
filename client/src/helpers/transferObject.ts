@@ -1,4 +1,4 @@
-import {MessageType} from "../../../common/dto/dto";
+import {MessageType} from "../../../common/dto/types";
 
 function messageDto(message: MessageType) {
     return {...message,

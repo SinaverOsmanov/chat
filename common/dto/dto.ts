@@ -1,51 +1,31 @@
-export type ModeratorMessageType = {
-    _id: string;
-    text: string;
-    sender: string;
-    moderatorId:string;
-    messageId: string;
-    created: Date;
-};
-
-export type MessageType = {
-    _id: string;
-    sender: string;
-    senderId: string;
-    text: string;
-    likes: number;
-    dateConfirmed: Date | null;
-    created: Date;
-    isConfirmed: boolean;
-    answer: ModeratorMessageType | null;
-    eventId: string;
-};
+import {MessageType, ModeratorMessageType, TypeWSMessage} from "./types";
 
 export type WsMessage =
     | {
-    type: "connect";
+    type: TypeWSMessage.CONNECT;
     data: MessageType[];
 }
     | {
-    type: "message";
+    type: TypeWSMessage.MESSAGE;
     data: MessageType;
 }
     | {
-    type: "likes";
+    type: TypeWSMessage.LIKES;
     data: { count: number; messageId: string };
 }
     | {
-    type: 'confirmedMessage'
+    type: TypeWSMessage.CONFIRMED_MESSAGE
     data: { isConfirmed: true, messageId: string }
 }
 | {
-    type: 'replyToMessage'
+    type: TypeWSMessage.REPLY_TO_MESSAGE
     data: ModeratorMessageType
 }
 | {
-    type: 'removeMessage'
+    type: TypeWSMessage.REMOVE_MESSAGE
     data: {messageId: string}
 }
 | {
-    type: 'getMessages',
+    type: TypeWSMessage.GET_MESSAGES,
     data: MessageType[]
 }

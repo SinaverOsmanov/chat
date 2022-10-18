@@ -1,5 +1,5 @@
 import {MessageRecord} from "../types";
-import {MessageType} from "../../common/dto/dto";
+import {MessageType} from "../../common/dto/types";
 
 export function messageDto(message: MessageRecord): MessageType {
     return {
@@ -18,3 +18,4 @@ export function messageDto(message: MessageRecord): MessageType {
             : null,
     }
 }
+

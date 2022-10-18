@@ -10,6 +10,9 @@ const TabsStyle = styled(TabsAntd)`
 `
 
 
-export const Tabs:React.FC<TabsProps> = ({defaultActiveKey, onChange, items})=> {
+const Tabs:React.FC<TabsProps> = ({defaultActiveKey, onChange, items})=> {
+
     return <TabsStyle defaultActiveKey={defaultActiveKey} onChange={onChange} items={items}/>
 }
+
+export default React.memo(Tabs)

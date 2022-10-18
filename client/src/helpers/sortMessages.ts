@@ -1,4 +1,4 @@
-import {MessageType} from "../../../common/dto/dto";
+import {MessageType} from "../../../common/dto/types";
 
 export function sortMessages(messages: MessageType[], type: string): MessageType[] {
 

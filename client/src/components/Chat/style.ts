@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import {FlexColumn, FlexRow} from "../../styled";
 
-export const ChatStyle = styled(FlexColumn)`
+export const Style = styled(FlexColumn)`
 	max-width: 650px;
 	background: #fff;
 	/* Grayscale/#FFFFFF */
@@ -15,7 +15,7 @@ export const ChatStyle = styled(FlexColumn)`
 export const DialogLayout = styled(FlexRow)`
 	padding: 24px;
 	background: #f8f8f8;
-	margin-top: 32px;
+	margin: 30px 0 60px;
 `
 
 export const DialogWrapper = styled(FlexColumn)`
@@ -23,7 +23,12 @@ export const DialogWrapper = styled(FlexColumn)`
 	background: #f8f8f8;
 	overflow-y: auto;
 	padding-right: 25px;
-	
+  
+    &.scroll {
+      
+    }
+  
+  
 	& {
 		scrollbar-width: auto;
 		scrollbar-color: #00a88e #cccccc;

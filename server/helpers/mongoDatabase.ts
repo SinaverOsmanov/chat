@@ -21,3 +21,4 @@ export async function ensureTypeDatabase(db: Db): Promise<ApplicationDb> {
   };
 }
 
+export function messageAPI(){}
