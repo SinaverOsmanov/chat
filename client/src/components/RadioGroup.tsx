@@ -1,8 +1,8 @@
 import React from "react";
 import {Radio as RadioButton, RadioChangeEvent} from 'antd'
 import styled from "styled-components";
-import {FlexRow} from "../styled";
 import RadioGroupWrapper from "./ui/RadioGroupWrapper";
+import { FlexRow } from "helpers/layoutStyle";
 
 type RadioGroupProps = { onChange(e: RadioChangeEvent): void, value: string, isModerator: boolean }
 

@@ -1,8 +1,8 @@
 import React from 'react'
 import { ButtonProps} from 'antd'
-import {FlexRow, FlexColumn} from "../../../styled";
 import {Style} from './style'
 import styled from "styled-components";
+import {FlexColumn, FlexRow } from 'helpers/layoutStyle';
 
 type ButtonType = {
 	background?: string
