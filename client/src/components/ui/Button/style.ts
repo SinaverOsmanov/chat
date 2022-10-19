@@ -12,10 +12,12 @@ const Style = styled(ButtonAntd)<ButtonAntdStyle>`
 	line-height: 0;
 	color: #fff;
 
-	&:hover {
+	&:hover, &:active, &:focus {
 		background: #00a88e;
 		color: #fff
 	}
+  
+    
 `
 //
 // const RemoveButton = styled(Button)`

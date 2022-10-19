@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React from "react";
 import {getDateTime} from "../../helpers/getDateTime";
 import Icon from "../ui/Icon";
 import {like} from "../../assets/svg";
@@ -16,7 +16,7 @@ type MessageWrapperType = {
 }
 
 function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperType) {
-    const answer = useInput('')
+    const answerInput = useInput('')
 
     function confirmedMessage(id: string) {
         onSendMessage({messageId: id}, 'confirmedMessage')
@@ -27,8 +27,7 @@ function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperTyp
     }
 
     function replyToMessage(id: string) {
-
-        const {value} = answer
+        const {value} = answerInput
 
         if (value) {
             onSendMessage({messageId: id, reply: value}, 'replyToMessage')
@@ -97,7 +96,7 @@ function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperTyp
                         <FlexRow>
                             <Input
                                 placeholder={'Введите ответ'}
-                                {...answer}
+                                {...answerInput}
                             />
                         </FlexRow>
                     </FlexColumn>

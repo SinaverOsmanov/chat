@@ -1,7 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react'
 
 import type {RadioChangeEvent} from "antd";
-import {Typography} from "antd";
 
 import {useChat} from '../../hooks/useChat'
 import {useInput} from "../../hooks/useInput";
@@ -23,33 +22,34 @@ import {Style, DialogLayout, DialogWrapper} from './style'
 import {Loading} from "../ui/Loading";
 import {items, options} from "../../constants";
 import {FlexColumn, FlexRow } from 'helpers/layoutStyle';
+import {useScroll} from "../../hooks/useScroll";
+import {Title} from "../ui/Title";
 
 
 // change logic when will have created auth
 const isModerator = true
-
-const {Title} = Typography
 
 export function Chat() {
     const [selectedSort, setSelectedSort] = useState('asc')
     const [selectedSender, setSelectedSender] = useState(isModerator ? 'moderator' : 'anonym')
     const [tab, setTab] = useState('all')
     const [messages, setMessages] = useState<MessageType[]>([])
-    const message = useInput('')
+    const messageInput = useInput('')
+    const scroll = useScroll({messages: messages})
 
     const {messageHistory, connectionStatus, sendMessageClick} = useChat()
 
     function sendMessage() {
-        if (message.value !== '') {
+        if (messageInput.value !== '') {
             const senderName = selectedSender === 'anonym' ? 'Аноним' : 'Пользователь'
 
             const data = {
                 sender: isModerator ? 'Модератор' : senderName,
-                text: message.value,
+                text: messageInput.value,
             }
 
             sendMessageClick(data)
-            message.onReset()
+            messageInput.onReset()
         }
     }
 
@@ -59,8 +59,12 @@ export function Chat() {
 
 
     useEffect(() => {
-        const sortedMessage = sortMessages(messageHistory, selectedSort)
-        setMessages(sortedMessage)
+        if(messageHistory.length > 0) {
+            const sortedMessage = sortMessages(messageHistory, selectedSort)
+            setMessages(sortedMessage)
+        } else {
+            setMessages(messageHistory)
+        }
 
     }, [messageHistory, selectedSort])
 
@@ -71,22 +75,23 @@ export function Chat() {
     }, [tab])
 
     useEffect(()=>{
-        const el:Element | null = document.querySelector('.scroll')
-        const scroll: Element | null = document.querySelector('.scrollHeight')
+        if(scroll.checked) {
+            const scrollElement: Element | null = document.querySelector('.scroll')
+            const scrollHeightElement: Element | null = document.querySelector('.scrollHeight')
 
-        if(!!el && !!scroll) {
-            el.scrollTo(0, scroll.scrollHeight)
+            if(!!scrollElement && !!scrollHeightElement) {
+                scrollElement.scrollTo(0, scrollHeightElement.scrollHeight)
+            }
         }
-
-    },[messages.length])
+    },[messages.length, scroll])
 
     return (
         <Style>
             <FlexRow justify="center">
                 {connectionStatus === 'Open' && (
                     <FlexColumn flex={1}>
-                        <FlexRow justify="center" style={{marginBottom: 24}}>
-                            <Title style={{margin: 0}} level={2}>Вопросы</Title>
+                        <FlexRow justify="center" style={{marginBottom: 25}}>
+                            <Title level={2}>Вопросы</Title>
                         </FlexRow>
                         <FlexRow justify="space-between">
                             <FlexColumn>
@@ -137,10 +142,10 @@ export function Chat() {
                                 </FlexRow>
                                 <FlexRow style={{marginTop: 5}}>
                                     <FlexColumn span={21}>
-                                        <FlexRow style={{height: 48}}>
+                                        <FlexRow style={{height: 50}}>
                                             <Input
                                                 placeholder={'Введите вопрос'}
-                                                {...message}
+                                                {...messageInput}
                                             />
                                         </FlexRow>
                                     </FlexColumn>
@@ -159,7 +164,7 @@ export function Chat() {
                     </FlexColumn>
                 )}
                 {connectionStatus === 'Closed' && 'Чат закрыт'}
-                {connectionStatus === 'Connection' && <Loading/>}
+                {connectionStatus === 'Connecting' && <Loading/>}
             </FlexRow>
         </Style>
     )

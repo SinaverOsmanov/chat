@@ -24,12 +24,7 @@ export const DialogWrapper = styled(FlexColumn)`
 	overflow-y: auto;
 	padding-right: 25px;
   
-    &.scroll {
-      
-    }
-  
-  
-	& {
+ 	& {
 		scrollbar-width: auto;
 		scrollbar-color: #00a88e #cccccc;
 	}
@@ -42,6 +37,7 @@ export const DialogWrapper = styled(FlexColumn)`
 
 	&::-webkit-scrollbar-track {
 		background: rgba(204,204,204,.4);
+        border-radius: 50px;
 	}
 
 	&::-webkit-scrollbar-thumb {

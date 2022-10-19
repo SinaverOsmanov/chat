@@ -1,8 +1,20 @@
 import { ObjectId } from "mongodb";
+import {WebSocket} from "uWebSockets.js";
+import {WsMessage} from "../common/dto/dto";
+import {UserSessionProcessor} from "./ws/userSession";
 
-// export type DbWrapper = {
-//   getCollection: (name: string) => Promise<Collection>;
-// };
+
+export type ConnectionEntry = { ws: WebSocket; session: UserSessionProcessor };
+
+export type SendMessage = (message: WsMessage) => Promise<void>;
+
+export type TokenDataType = {
+  role: string;
+  userName: string;
+  userId: string;
+  email: string;
+  iat: number;
+};
 
 export type ModeratorMessageRecord = {
   _id: ObjectId;
