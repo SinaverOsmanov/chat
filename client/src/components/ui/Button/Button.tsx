@@ -1,5 +1,5 @@
 import React from 'react'
-import { ButtonProps} from 'antd'
+import { ButtonProps } from 'antd'
 import {Style} from './style'
 import styled from "styled-components";
 import {FlexColumn, FlexRow } from 'helpers/layoutStyle';
@@ -21,11 +21,10 @@ const Button: React.FC<ButtonPropsType> = ({ children, background, ...rest }) =>
 	</Style>
 }
 
-
 const RemoveButton = styled(Button)`
 	background: #e52a2a;
-	
-	&:hover {
+
+	&:hover, &:active, &:focus {
 		background: #e52a2a
 	}
 `

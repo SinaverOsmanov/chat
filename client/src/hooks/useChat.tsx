@@ -3,10 +3,10 @@ import useWebSocket, {ReadyState} from 'react-use-websocket'
 import {WebSocketHook} from 'react-use-websocket/src/lib/types'
 import {useParams} from 'react-router-dom'
 import {parseMessage} from '../helpers/parseMessage'
-import {moderatorToken} from '../authToken/tokens'
+import {moderatorToken, user2Token, userToken} from '../authToken/tokens'
 import {WsMessage} from '../../../common/dto/dto'
 import {MessageType} from "../../../common/dto/types";
-import {setDataType} from "../helpers/setDataType";
+import {getDataByType} from "../helpers/getDataByType";
 
 export const useChat = () => {
     const [messageHistory, setMessageHistory] = useState<MessageType[] | []>([])
@@ -23,9 +23,9 @@ export const useChat = () => {
             onOpen: event => {
                 console.log(event, 'open')
             },
-            onMessage: event => {
+            onMessage: async (event) => {
                 const {type, data}: WsMessage = parseMessage(event.data)
-                const messages = setDataType({
+                const messages = getDataByType({
                     type,
                     data,
                     messages: messageHistory
@@ -34,9 +34,11 @@ export const useChat = () => {
                 setMessageHistory(messages)
             },
             onClose: () => console.log('Closed'),
-            // When registering, write your token here
-            protocols: moderatorToken,
             shouldReconnect: () => true,
+            reconnectAttempts: 10,
+            reconnectInterval: 3000,
+            // When registering, write your token here
+            queryParams: {Authorization: moderatorToken}
         }
     )
 
