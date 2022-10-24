@@ -19,7 +19,7 @@ class WebSocketServices {
     }
 
     setMessage(message: MessageType) {
-        this.messages.push(message)
+        this.messages = [...this.getMessages(), message]
         return this.getMessages()
     }
 
@@ -88,6 +88,6 @@ export function getDataByType({type, data, messages}: setDataTypeProps): Message
     } else if (type === 'confirmedMessage') {
         return ws.setConfirmed(data)
     } else {
-        return messages
+        return ws.getMessages()
     }
 }

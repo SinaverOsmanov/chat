@@ -38,7 +38,7 @@ export const useChat = () => {
             reconnectAttempts: 10,
             reconnectInterval: 3000,
             // When registering, write your token here
-            queryParams: {Authorization: moderatorToken}
+            queryParams: {Authorization: userToken}
         }
     )
 

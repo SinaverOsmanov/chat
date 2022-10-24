@@ -26,7 +26,6 @@ function makeServer(db: Db): TemplatedApp {
 
             if (!token) {
                 res.close()
-                //end("Вы не указали нужные данные", true);
                 return;
             }
 

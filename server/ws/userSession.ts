@@ -28,12 +28,16 @@ export class UserSessionProcessor {
             foundMessages = await messages.find({eventId}).toArray();
         } else {
             foundMessages = await messages
-                .find({eventId, $or: [{isConfirmed: true}, {senderId: new ObjectId(clientId)}]})
+                .find({
+                        eventId, $or: [
+                            {isConfirmed: true},
+                            {senderId: new ObjectId(clientId)}
+                        ]
+                    }
+                )
                 .limit(30)
                 .toArray();
         }
-
-        // when in a collection of the message will a field date with the correct date, need to do right filter
 
         const mappedMessages: MessageType[] = foundMessages.map(
             (message) => messageDto(message)
@@ -105,8 +109,8 @@ export class UserSessionProcessor {
             const eventClients = this.eventGetter(this.eventId)
 
             eventClients.forEach((e) => {
-                if (e.session.isModerator || responseData.data.senderId === this.clientId) {
-                    this.sendMessage(responseData);
+                if (e.session.isModerator || responseMessage.senderId.toHexString() === e.ws.clientId) {
+                    e.session.sendMessage(responseData);
                 }
             });
         } catch (e) {

@@ -25,9 +25,8 @@ import {FlexColumn, FlexRow } from 'helpers/layoutStyle';
 import {useScroll} from "../../hooks/useScroll";
 import {Title} from "../ui/Title";
 
-
 // change logic when will have created auth
-const isModerator = true
+const isModerator = false
 
 export function Chat() {
     const [selectedSort, setSelectedSort] = useState('asc')
