@@ -1,8 +1,7 @@
 import { ObjectId } from "mongodb";
-import {WebSocket} from "uWebSockets.js";
-import {WsMessage} from "../common/dto/dto";
-import {UserSessionProcessor} from "./ws/userSession";
-
+import { WebSocket } from "uWebSockets.js";
+import { WsMessage } from "../common/dto/dto";
+import { UserSessionProcessor } from "./ws/userSession";
 
 export type ConnectionEntry = { ws: WebSocket; session: UserSessionProcessor };
 
@@ -14,6 +13,7 @@ export type TokenDataType = {
   userId: string;
   email: string;
   iat: number;
+  isModerator: boolean;
 };
 
 export type ModeratorMessageRecord = {
@@ -22,13 +22,13 @@ export type ModeratorMessageRecord = {
   sender: string;
   moderatorId: ObjectId;
   created: Date;
-  messageId: ObjectId
+  messageId: ObjectId;
 };
 
 export type MessageRecord = {
   _id: ObjectId;
   text: string;
-  senderId: ObjectId;
+  senderId: string;
   sender: string;
   likes: ObjectId[];
   dateConfirmed: Date | null;
@@ -46,5 +46,5 @@ export type LikeRecord = {
 
 export type ModeratorRecord = {
   _id: ObjectId;
-  moderatorId: ObjectId;
+  moderatorId: string;
 };

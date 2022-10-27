@@ -1,17 +1,12 @@
-import {Db, ObjectId} from "mongodb";
-import {ensureTypeDatabase} from "./mongoDatabase";
+import { Db, ObjectId } from "mongodb";
+import { ensureTypeDatabase } from "./mongoDatabase";
 
 export async function isModerator(db: Db, clientId: string): Promise<boolean> {
+  const { moderators } = await ensureTypeDatabase(db);
 
-    const {moderators} = await ensureTypeDatabase(db);
+  const result = await moderators.findOne({
+    moderatorId: clientId,
+  });
 
-    if (!(await moderators.indexExists("moderatorId"))) {
-        await moderators.createIndex({moderatorId: -1});
-    }
-
-    const result = await moderators.findOne({
-        moderatorId: new ObjectId(clientId),
-    });
-
-    return !!result
+  return !!result;
 }
