@@ -155,7 +155,7 @@ export class UserSessionProcessor {
                 }
 
                 eventClients.forEach((e) => {
-                    this.sendMessage({
+                    e.session.sendMessage({
                         type: TypeWSMessage.LIKES,
                         data: {
                             messageId: data.messageId,
@@ -200,7 +200,7 @@ export class UserSessionProcessor {
                     if (!eventClients) throw new Error("no event");
 
                     eventClients.forEach((e) => {
-                        this.sendMessage({
+                        e.session.sendMessage({
                             type: TypeWSMessage.REPLY_TO_MESSAGE,
                             data: {
                                 ...replyObject,
@@ -226,17 +226,17 @@ export class UserSessionProcessor {
             if (!this.isModerator) {
                 return;
             }
-            const {messages} = this.db;
+            const { messages } = this.db;
 
             const removed = await messages.deleteOne({_id: new ObjectId(data.messageId)})
 
-            if (removed.acknowledged) {
+            if ( removed.acknowledged ) {
                 let eventClients = this.eventGetter(this.eventId);
 
                 if (!eventClients) throw new Error("no event");
 
                 eventClients.forEach((e) => {
-                    this.sendMessage({
+                    e.session.sendMessage({
                         type: TypeWSMessage.REMOVE_MESSAGE,
                         data: {messageId: data.messageId},
                     });
@@ -252,7 +252,7 @@ export class UserSessionProcessor {
         if (!this.isModerator) {
             return;
         }
-        const {messages} = this.db;
+        const { messages } = this.db;
         const message = await messages.findOneAndUpdate(
             {
                 _id: new ObjectId(data.messageId),
@@ -269,7 +269,7 @@ export class UserSessionProcessor {
             let eventClients = this.eventGetter(this.eventId);
 
             eventClients.forEach((e) => {
-                this.sendMessage({
+                e.session.sendMessage({
                     type: TypeWSMessage.CONFIRMED_MESSAGE,
                     data: {
                         messageId: data.messageId,

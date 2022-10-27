@@ -13,7 +13,7 @@ export const useChat = () => {
     const {eventId} = useParams()
 
     const memoizedEvent = useMemo(
-        () => `ws://localhost:8080/${eventId}`,
+        () => `ws://my.codish.ru:8088/${eventId}`,
         [eventId]
     )
 
@@ -38,7 +38,7 @@ export const useChat = () => {
             reconnectAttempts: 10,
             reconnectInterval: 3000,
             // When registering, write your token here
-            queryParams: {Authorization: userToken}
+            queryParams: {Authorization: moderatorToken}
         }
     )
 

@@ -101,11 +101,10 @@ async function initCollection(db: Db) {
     try {
         await db.createCollection('messages')
         await db.createCollection('moderators')
+        return
     } catch (e) {
         return
     }
-    return
-
 }
 
 async function start() {

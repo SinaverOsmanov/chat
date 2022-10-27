@@ -26,7 +26,7 @@ import {useScroll} from "../../hooks/useScroll";
 import {Title} from "../ui/Title";
 
 // change logic when will have created auth
-const isModerator = false
+const isModerator = true
 
 export function Chat() {
     const [selectedSort, setSelectedSort] = useState('asc')
