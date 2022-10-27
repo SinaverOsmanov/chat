@@ -26,7 +26,7 @@ import { useScroll } from '../../hooks/useScroll'
 import { Title } from '../ui/Title'
 
 // change logic when will have created auth
-const isModerator = true
+const isModerator = false
 
 export function Chat({ jwt }: { jwt: string }) {
 	const [selectedSort, setSelectedSort] = useState('asc')
@@ -148,11 +148,14 @@ export function Chat({ jwt }: { jwt: string }) {
 										</FlexRow>
 									</FlexColumn>
 									<FlexColumn>
-                                        <RadioGroup
-                                            onChange={selectedSenderCallback}
-                                            value={selectedSender}
-                                            isModerator={isModerator}
-                                        />
+										<Input
+											value={selectedSender}
+											onChange={e =>
+												setSelectedSender(
+													e.target.value
+												)
+											}
+										/>
 									</FlexColumn>
 								</FlexRow>
 								<FlexRow style={{ marginTop: 5 }}>
