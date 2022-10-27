@@ -1,65 +1,67 @@
-import {useCallback, useMemo, useState} from 'react'
-import useWebSocket, {ReadyState} from 'react-use-websocket'
-import {WebSocketHook} from 'react-use-websocket/src/lib/types'
-import {useParams} from 'react-router-dom'
-import {parseMessage} from '../helpers/parseMessage'
-import {moderatorToken, user2Token, userToken} from '../authToken/tokens'
-import {WsMessage} from '../../../common/dto/dto'
-import {MessageType} from "../../../common/dto/types";
-import {getDataByType} from "../helpers/getDataByType";
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import useWebSocket, { ReadyState } from 'react-use-websocket'
+import { WebSocketHook } from 'react-use-websocket/src/lib/types'
+import { useParams } from 'react-router-dom'
+import { parseMessage } from '../helpers/parseMessage'
+import {
+	makeJwt,
+	moderatorToken,
+	user2Token,
+	userToken,
+} from '../authToken/tokens'
+import { WsMessage } from '../../../common/dto/dto'
+import { MessageType } from '../../../common/dto/types'
+import { getDataByType } from '../helpers/getDataByType'
 
-export const useChat = () => {
-    const [messageHistory, setMessageHistory] = useState<MessageType[] | []>([])
-    const {eventId} = useParams()
+export const useChat = (jwt: string) => {
+	const [messageHistory, setMessageHistory] = useState<MessageType[]>([])
+	const { eventId } = useParams()
 
-    const memoizedEvent = useMemo(
-        () => `ws://localhost:8080/${eventId}`,
-        [eventId]
-    )
+	const memoizedEvent = useMemo(
+		() => `ws://localhost:8080/${eventId}`,
+		[eventId]
+	)
 
-    const {readyState, sendJsonMessage}: WebSocketHook = useWebSocket(
-        memoizedEvent,
-        {
-            onOpen: event => {
-                console.log(event, 'open')
-            },
-            onMessage: async (event) => {
-                const {type, data}: WsMessage = parseMessage(event.data)
-                const messages = getDataByType({
-                    type,
-                    data,
-                    messages: messageHistory
-                })
+	const { readyState, sendJsonMessage }: WebSocketHook = useWebSocket(
+		memoizedEvent,
+		{
+			onOpen: event => {
+				console.log(event, 'open')
+			},
+			onMessage: async event => {
+				const { type, data }: WsMessage = parseMessage(event.data)
+				const messages = getDataByType({
+					type,
+					data,
+					messages: messageHistory,
+				})
 
-                setMessageHistory(messages)
-            },
-            onClose: () => console.log('Closed'),
-            shouldReconnect: () => true,
-            reconnectAttempts: 10,
-            reconnectInterval: 3000,
-            // When registering, write your token here
-            queryParams: {Authorization: userToken}
-        }
-    )
+				setMessageHistory(messages)
+			},
+			onClose: () => console.log('Closed'),
+			shouldReconnect: () => true,
+			reconnectAttempts: 10,
+			reconnectInterval: 3000,
+			// When registering, write your token here
+			queryParams: { Authorization: jwt },
+		}
+	)
 
-    const sendMessageCallback = useCallback(
-        (data: any, type = 'message') => {
-            sendJsonMessage({type, data})
-        },
-        []
-    )
+	const sendMessageCallback = useCallback((data: any, type = 'message') => {
+		sendJsonMessage({ type, data })
+	}, [])
 
-    const connectionStatus = {
-        [ReadyState.CONNECTING]: 'Connecting',
-        [ReadyState.OPEN]: 'Open',
-        [ReadyState.CLOSING]: 'Closing',
-        [ReadyState.CLOSED]: 'Closed',
-        [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
-    }[readyState]
+	const connectionStatus = {
+		[ReadyState.CONNECTING]: 'Connecting',
+		[ReadyState.OPEN]: 'Open',
+		[ReadyState.CLOSING]: 'Closing',
+		[ReadyState.CLOSED]: 'Closed',
+		[ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+	}[readyState]
 
-    return {
-        sendMessageClick: sendMessageCallback,
-        connectionStatus,
-        messageHistory,
-    }
+	return {
+		sendMessageClick: sendMessageCallback,
+		connectionStatus,
+		messageHistory,
+	}
 }

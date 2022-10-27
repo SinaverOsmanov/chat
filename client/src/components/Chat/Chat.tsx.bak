@@ -148,11 +148,14 @@ export function Chat({ jwt }: { jwt: string }) {
 										</FlexRow>
 									</FlexColumn>
 									<FlexColumn>
-                                        <RadioGroup
-                                            onChange={selectedSenderCallback}
-                                            value={selectedSender}
-                                            isModerator={isModerator}
-                                        />
+										<Input
+											value={selectedSender}
+											onChange={e =>
+												setSelectedSender(
+													e.target.value
+												)
+											}
+										/>
 									</FlexColumn>
 								</FlexRow>
 								<FlexRow style={{ marginTop: 5 }}>
