@@ -6,30 +6,30 @@ export type RemoveMessage = { messageId: string }
 
 export type WsMessage =
     | {
-        type: TypeWSMessage.CONNECT;
+        type: TypeWSMessage;
         data: MessageType[];
     }
     | {
-        type: TypeWSMessage.MESSAGE;
+        type: TypeWSMessage;
         data: MessageType;
     }
     | {
-        type: TypeWSMessage.LIKES;
+        type: TypeWSMessage;
         data: LikeMessage;
     }
     | {
-        type: TypeWSMessage.CONFIRMED_MESSAGE
+        type: TypeWSMessage
         data: ConfirmedMessage;
     }
     | {
-        type: TypeWSMessage.REPLY_TO_MESSAGE
+        type: TypeWSMessage
         data: ModeratorMessageType
     }
     | {
-        type: TypeWSMessage.REMOVE_MESSAGE
+        type: TypeWSMessage
         data: RemoveMessage;
     }
     | {
-        type: TypeWSMessage.GET_MESSAGES,
+        type: TypeWSMessage,
         data: MessageType[]
     }

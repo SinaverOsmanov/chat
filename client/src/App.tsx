@@ -42,7 +42,7 @@ function App() {
 			>
 				set name
 			</button>
-			{jwt && <Chat jwt={jwt} />}
+			{jwt && <Chat jwt={jwt} isModerator={isModerator} />}
 		</div>
 	)
 }

@@ -52,7 +52,7 @@ export class UserSessionProcessor {
     );
 
     await sendMessage({
-      type: TypeWSMessage.CONNECT,
+      type: 'connect',
       data: mappedMessages,
     });
 
@@ -66,20 +66,20 @@ export class UserSessionProcessor {
     );
   }
 
-  async processMessage(message: any) {
-    const { data, type } = message;
+  async processMessage(message: WsMessage) {
+    const { data, type }: any = message;
 
-    if (type === TypeWSMessage.LIKES) {
+    if (type === 'likes') {
       await this.processLike(data);
-    } else if (type === TypeWSMessage.REPLY_TO_MESSAGE) {
+    } else if (type === 'replyToMessage') {
       await this.processReply(data);
-    } else if (type === TypeWSMessage.REMOVE_MESSAGE) {
+    } else if (type === 'removeMessage') {
       await this.processRemoveMessage(data);
-    } else if (type === TypeWSMessage.GET_MESSAGES) {
+    } else if (type === 'getMessages') {
       await this.processGetMessages(data);
-    } else if (type === TypeWSMessage.CONFIRMED_MESSAGE) {
+    } else if (type === 'confirmedMessage') {
       await this.processConfirmedMessages(data);
-    } else if (type === TypeWSMessage.MESSAGE) {
+    } else if (type === 'message') {
       await this.processSendMessage(data);
     }
   }
@@ -110,7 +110,7 @@ export class UserSessionProcessor {
       if (!acknowledged) throw new Error("insertOne doesn't acknowledged");
 
       const responseData: WsMessage = {
-        type: TypeWSMessage.MESSAGE,
+        type: 'message',
         data: messageDto(responseMessage),
       };
 
@@ -166,8 +166,8 @@ export class UserSessionProcessor {
         }
 
         eventClients.forEach((e) => {
-          this.sendMessage({
-            type: TypeWSMessage.LIKES,
+          e.session.sendMessage({
+            type: 'likes',
             data: {
               messageId: data.messageId,
               count: likesCount,
@@ -211,8 +211,8 @@ export class UserSessionProcessor {
           if (!eventClients) throw new Error("no event");
 
           eventClients.forEach((e) => {
-            this.sendMessage({
-              type: TypeWSMessage.REPLY_TO_MESSAGE,
+            e.session.sendMessage({
+              type: 'replyToMessage',
               data: {
                 ...replyObject,
                 _id: replyObject._id.toHexString(),
@@ -247,8 +247,8 @@ export class UserSessionProcessor {
         if (!eventClients) throw new Error("no event");
 
         eventClients.forEach((e) => {
-          this.sendMessage({
-            type: TypeWSMessage.REMOVE_MESSAGE,
+          e.session.sendMessage({
+            type: 'removeMessage',
             data: { messageId: data.messageId },
           });
         });
@@ -279,8 +279,8 @@ export class UserSessionProcessor {
       let eventClients = this.eventGetter(this.eventId);
 
       eventClients.forEach((e) => {
-        this.sendMessage({
-          type: TypeWSMessage.CONFIRMED_MESSAGE,
+        e.session.sendMessage({
+          type: 'confirmedMessage',
           data: {
             messageId: data.messageId,
             isConfirmed: true,
@@ -335,7 +335,7 @@ export class UserSessionProcessor {
     const mappedMessages: MessageType[] = foundMessages.map(messageDto);
 
     await this.sendMessage({
-      type: TypeWSMessage.GET_MESSAGES,
+      type: 'getMessages',
       data: mappedMessages,
     });
   }

@@ -20,13 +20,19 @@ export type MessageType = {
     answer: ModeratorMessageType | null;
     eventId: string;
 };
+//
+//
+//
+// export enum TypeWSMessage {
+//     CONNECT = 'connect',
+//     MESSAGE = 'message',
+//     LIKES = "likes",
+//     CONFIRMED_MESSAGE = 'confirmedMessage',
+//     REPLY_TO_MESSAGE = 'replyToMessage',
+//     REMOVE_MESSAGE = 'removeMessage',
+//     GET_MESSAGES = 'getMessages'
+// }
 
-export enum TypeWSMessage {
-    CONNECT = 'connect',
-    MESSAGE = 'message',
-    LIKES = "likes",
-    CONFIRMED_MESSAGE = 'confirmedMessage',
-    REPLY_TO_MESSAGE = 'replyToMessage',
-    REMOVE_MESSAGE = 'removeMessage',
-    GET_MESSAGES = 'getMessages'
-}
+
+
+export type TypeWSMessage = 'connect' | 'message' | "likes" | 'confirmedMessage' | 'replyToMessage' | 'removeMessage' | 'getMessages'

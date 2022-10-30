@@ -1,9 +1,10 @@
 import {messageDto} from "./transferObject";
 import {MessageType, ModeratorMessageType, TypeWSMessage} from "../../../common/dto/types";
+import {ConfirmedMessage, LikeMessage, RemoveMessage, WsMessage} from "../../../common/dto/dto";
 
 type setDataTypeProps = {
     type: TypeWSMessage,
-    data: any
+    data: any,
     messages: MessageType[],
 }
 
@@ -32,22 +33,22 @@ class WebSocketServices {
         return this.messages
     }
 
-    setLike(id: string, count:number) {
-        const foundMessage = this.findById(id)
+    setLike(data: LikeMessage): MessageType[] {
+        const foundMessage = this.findById(data.messageId)
 
         if (foundMessage) {
-            foundMessage.likes = count
+            foundMessage.likes = data.count
             return [...this.messages]
         }
         return this.getMessages()
     }
 
-    removeById(id: string) {
-        const filteredMessages = this.messages.filter((m) => m._id !== id)
+    removeById(data: RemoveMessage) {
+        const filteredMessages = this.messages.filter((m) => m._id !== data.messageId)
         return this.setMessages(filteredMessages)
     }
 
-    setConfirmed(data: {messageId:string, isConfirmed: boolean}) {
+    setConfirmed(data: ConfirmedMessage) {
         const foundMessage = this.findById(data.messageId)
 
         if (foundMessage) {
@@ -57,10 +58,10 @@ class WebSocketServices {
         return this.getMessages()
     }
 
-    replyToMessage(answer: ModeratorMessageType){
-        const foundMessage = this.findById(answer.messageId)
+    replyToMessage(data: ModeratorMessageType){
+        const foundMessage = this.findById(data.messageId)
         if (foundMessage) {
-            foundMessage.answer = {...answer, created: new Date(answer.created)}
+            foundMessage.answer = {...data, created: new Date(data.created)}
             return [...this.messages]
         }
         return this.getMessages()
@@ -80,11 +81,11 @@ export function getDataByType({type, data, messages}: setDataTypeProps): Message
     } else if (type === 'message') {
         return ws.setMessage(data)
     } else if (type === 'likes') {
-        return ws.setLike(data.messageId, data.count)
+        return ws.setLike(data)
     } else if (type === 'replyToMessage') {
         return ws.replyToMessage(data)
     } else if (type === 'removeMessage') {
-        return ws.removeById(data.messageId)
+        return ws.removeById(data)
     } else if (type === 'confirmedMessage') {
         return ws.setConfirmed(data)
     } else {

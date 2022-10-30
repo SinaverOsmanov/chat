@@ -26,9 +26,9 @@ import { useScroll } from '../../hooks/useScroll'
 import { Title } from '../ui/Title'
 
 // change logic when will have created auth
-const isModerator = true
+// const isModerator = true
 
-export function Chat({ jwt }: { jwt: string }) {
+export function Chat({ jwt, isModerator }: { jwt: string, isModerator: boolean }) {
 	const [selectedSort, setSelectedSort] = useState('asc')
 	const [selectedSender, setSelectedSender] = useState('user 1')
 	const [tab, setTab] = useState('all')
