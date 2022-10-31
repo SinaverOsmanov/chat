@@ -4,7 +4,7 @@ import './App.css'
 import { Chat } from './components/Chat/Chat'
 
 function App() {
-	const [userNameValue, setUserNameValue] = useState('user 1')
+	const [userNameValue, setUserNameValue] = useState('User')
 	const [isModeratorValue, setIsModeratorValue] = useState(false)
 
 	const [userName, setUserName] = useState(userNameValue)

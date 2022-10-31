@@ -30,7 +30,7 @@ import { Title } from '../ui/Title'
 
 export function Chat({ jwt, isModerator }: { jwt: string, isModerator: boolean }) {
 	const [selectedSort, setSelectedSort] = useState('asc')
-	const [selectedSender, setSelectedSender] = useState('user 1')
+	const [selectedSender, setSelectedSender] = useState(isModerator ? 'moderator' : 'anonym')
 	const [tab, setTab] = useState('all')
 	const [messages, setMessages] = useState<MessageType[]>([])
 	const messageInput = useInput('')

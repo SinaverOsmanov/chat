@@ -1,7 +1,7 @@
 import { MessageType, ModeratorMessageType, TypeWSMessage } from "./types";
 
 export type LikeMessage = { count: number; messageId: string };
-export type ConfirmedMessage = { isConfirmed: true, messageId: string };
+export type ConfirmedMessage = { messageId: string };
 export type RemoveMessage = { messageId: string }
 
 export type WsMessage =
