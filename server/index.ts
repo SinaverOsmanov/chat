@@ -45,18 +45,18 @@ function makeServer(db: Db): TemplatedApp {
       /* This immediately calls open handler, you must not use res after this call */
       console.log("connecting user: " + userId);
       res.upgrade(
-        {
-          eventId: req.getParameter(0),
-          wsId: secWebSocketKey,
-          clientId: userId,
-          isModerator,
-        },
+          {
+            eventId: req.getParameter(0),
+            wsId: secWebSocketKey,
+            clientId: userId,
+            isModerator,
+          },
 
-        /* Spell these correctly */
-        secWebSocketKey,
-        secWebSocketProtocol,
-        secWebSocketExtensions,
-        context
+          /* Spell these correctly */
+          secWebSocketKey,
+          secWebSocketProtocol,
+          secWebSocketExtensions,
+          context
       );
     },
     open: async (ws) => {
@@ -71,12 +71,12 @@ function makeServer(db: Db): TemplatedApp {
         }
 
         const session = await UserSessionProcessor.init(
-          (m) => sendMessage(ws, m),
-          db,
-          clientId,
-          eventId,
-          getEvent,
-          isModerator
+            (m) => sendMessage(ws, m),
+            db,
+            clientId,
+            eventId,
+            getEvent,
+            isModerator
         );
 
         eventClients.set(wsId, { ws, session });
