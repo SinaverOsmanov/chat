@@ -1,33 +1,28 @@
-import { ApplicationDb, ensureTypeDatabase } from "../helpers/mongoDatabase";
-import { Db, ObjectId } from "mongodb";
-import { isModerator } from "../helpers/isModerator";
-import { ConnectionEntry, MessageRecord, SendMessage } from "../types";
-import { MessageType, TypeWSMessage } from "../../common/dto/types";
-import { messageDto } from "../helpers/messageDto";
-import {
-  ConfirmedMessage,
-  LikeMessage,
-  RemoveMessage,
-  WsMessage,
-} from "../../common/dto/dto";
+import {ApplicationDb, ensureTypeDatabase} from "../helpers/mongoDatabase";
+import {Db, ModifyResult, ObjectId, WithId} from "mongodb";
+import {isModerator} from "../helpers/isModerator";
+import {ConnectionEntry, MessageRecord, SendMessage} from "../types";
+import {MessageType} from "../../common/dto/types";
+import {messageDto} from "../helpers/messageDto";
+import {ConfirmedMessage, LikeMessage, RemoveMessage, WsMessage,} from "../../common/dto/dto";
 
 export class UserSessionProcessor {
   private constructor(
-    private sendMessage: SendMessage,
-    private db: ApplicationDb,
-    private eventGetter: (eventId: string) => Map<string, ConnectionEntry>,
-    private clientId: string,
-    private eventId: string,
-    private isModerator: boolean
+      private sendMessage: SendMessage,
+      private db: ApplicationDb,
+      private eventGetter: (eventId: string) => Map<string, ConnectionEntry>,
+      private clientId: string,
+      private eventId: string,
+      private isModerator: boolean
   ) {}
 
   static async init(
-    sendMessage: SendMessage,
-    db: Db,
-    clientId: string,
-    eventId: string,
-    eventGetter: (eventId: string) => Map<string, ConnectionEntry>,
-    forceModerator: boolean
+      sendMessage: SendMessage,
+      db: Db,
+      clientId: string,
+      eventId: string,
+      eventGetter: (eventId: string) => Map<string, ConnectionEntry>,
+      forceModerator: boolean
   ): Promise<UserSessionProcessor> {
     const moderator = forceModerator || (await isModerator(db, clientId));
 
@@ -39,16 +34,16 @@ export class UserSessionProcessor {
       foundMessages = await messages.find({ eventId }).toArray();
     } else {
       foundMessages = await messages
-        .find({
-          eventId,
-          $or: [{ isConfirmed: true }, { senderId: clientId }],
-        })
-        .limit(30)
-        .toArray();
+          .find({
+            eventId,
+            $or: [{ isConfirmed: true }, { senderId: clientId }],
+          })
+          .limit(30)
+          .toArray();
     }
 
     const mappedMessages: MessageType[] = foundMessages.map((message) =>
-      messageDto(message)
+        messageDto(message)
     );
 
     await sendMessage({
@@ -57,12 +52,12 @@ export class UserSessionProcessor {
     });
 
     return new UserSessionProcessor(
-      sendMessage,
-      await ensureTypeDatabase(db),
-      eventGetter,
-      clientId,
-      eventId,
-      moderator
+        sendMessage,
+        await ensureTypeDatabase(db),
+        eventGetter,
+        clientId,
+        eventId,
+        moderator
     );
   }
 
@@ -118,8 +113,8 @@ export class UserSessionProcessor {
 
       eventClients.forEach((e) => {
         if (
-          e.session.isModerator ||
-          responseMessage.senderId === e.ws.clientId
+            e.session.isModerator ||
+            responseMessage.senderId === e.ws.clientId
         ) {
           e.session.sendMessage(responseData);
         }
@@ -136,7 +131,7 @@ export class UserSessionProcessor {
       const m = await messages.findOne({ _id: new ObjectId(data.messageId) });
 
       const foundIfHaveLike = m?.likes.find(
-        (like) => like.toHexString() === this.clientId
+          (like) => like.toHexString() === this.clientId
       );
 
       if (foundIfHaveLike) {
@@ -144,14 +139,14 @@ export class UserSessionProcessor {
       }
 
       const message = await messages.findOneAndUpdate(
-        {
-          _id: new ObjectId(data.messageId),
-        },
-        {
-          $addToSet: {
-            likes: new ObjectId(this.clientId),
+          {
+            _id: new ObjectId(data.messageId),
           },
-        }
+          {
+            $addToSet: {
+              likes: new ObjectId(this.clientId),
+            },
+          }
       );
 
       if (!!message.ok) {
@@ -195,14 +190,14 @@ export class UserSessionProcessor {
 
       if (this.isModerator) {
         const message = await messages.findOneAndUpdate(
-          {
-            _id: new ObjectId(data.messageId),
-          },
-          {
-            $set: {
-              answer: replyObject,
+            {
+              _id: new ObjectId(data.messageId),
             },
-          }
+            {
+              $set: {
+                answer: replyObject,
+              },
+            }
         );
 
         if (!!message.ok) {
@@ -263,28 +258,26 @@ export class UserSessionProcessor {
       return;
     }
     const { messages } = this.db;
-    const message = await messages.findOneAndUpdate(
-      {
-        _id: new ObjectId(data.messageId),
-      },
-      {
-        $set: {
-          isConfirmed: true,
-          dateConfirmed: new Date(),
+    const {ok, value}: ModifyResult<MessageRecord> = await messages.findOneAndUpdate(
+        {
+          _id: new ObjectId(data.messageId)
         },
-      }
+        {
+          $set: {
+            isConfirmed: true,
+            dateConfirmed: new Date()
+          }
+        },
+        {returnDocument: 'after'}
     );
 
-    if (!!message.ok) {
+    if (ok && value) {
       let eventClients = this.eventGetter(this.eventId);
 
       eventClients.forEach((e) => {
         e.session.sendMessage({
           type: 'confirmedMessage',
-          data: {
-            messageId: data.messageId,
-            isConfirmed: true,
-          },
+          data: messageDto(value),
         });
       });
     }
@@ -298,38 +291,38 @@ export class UserSessionProcessor {
       const userObjectId = this.clientId;
       if (this.isModerator) {
         foundMessages = await messages
-          .find(
-            {
-              eventId: this.eventId,
-              $or: [
-                { "answer.moderatorId": userObjectId },
-                { senderId: userObjectId },
-              ],
-            },
-            { limit: 30 }
-          )
-          .toArray();
+            .find(
+                {
+                  eventId: this.eventId,
+                  $or: [
+                    { "answer.moderatorId": userObjectId },
+                    { senderId: userObjectId },
+                  ],
+                },
+                { limit: 30 }
+            )
+            .toArray();
       } else {
         foundMessages = await messages
-          .find(
-            {
-              eventId: this.eventId,
-              senderId: userObjectId,
-            },
-            { limit: 30 }
-          )
-          .toArray();
+            .find(
+                {
+                  eventId: this.eventId,
+                  senderId: userObjectId,
+                },
+                { limit: 30 }
+            )
+            .toArray();
       }
     } else {
       foundMessages = await messages
-        .find(
-          {
-            eventId: this.eventId,
-            $or: [{ isConfirmed: true }, { senderId: this.clientId }],
-          },
-          { limit: 30 }
-        )
-        .toArray();
+          .find(
+              {
+                eventId: this.eventId,
+                $or: [{ isConfirmed: true }, { senderId: this.clientId }],
+              },
+              { limit: 30 }
+          )
+          .toArray();
     }
 
     const mappedMessages: MessageType[] = foundMessages.map(messageDto);

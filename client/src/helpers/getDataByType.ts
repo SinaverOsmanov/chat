@@ -38,7 +38,6 @@ class WebSocketServices {
 
         if (foundMessage) {
             foundMessage.likes = data.count
-            return [...this.messages]
         }
         return this.getMessages()
     }
@@ -48,13 +47,15 @@ class WebSocketServices {
         return this.setMessages(filteredMessages)
     }
 
-    setConfirmed(data: ConfirmedMessage) {
-        const foundMessage = this.findById(data.messageId)
+    setConfirmed(data: MessageType) {
+        const foundMessage = this.findById(data._id)
 
         if (foundMessage) {
             foundMessage.isConfirmed = data.isConfirmed
-            return [...this.messages]
+        } else {
+            this.setMessage(data)
         }
+
         return this.getMessages()
     }
 
@@ -62,8 +63,8 @@ class WebSocketServices {
         const foundMessage = this.findById(data.messageId)
         if (foundMessage) {
             foundMessage.answer = {...data, created: new Date(data.created)}
-            return [...this.messages]
         }
+
         return this.getMessages()
     }
 
