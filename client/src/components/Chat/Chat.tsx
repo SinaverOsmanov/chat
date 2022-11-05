@@ -96,6 +96,12 @@ export function Chat({ jwt, isModerator, userName }: { jwt: string, isModerator:
 	// 	}
 	// }, [messages.length, scroll])
 
+	function keyPressEnter(e: React.KeyboardEvent<HTMLInputElement>) {
+		if(e.key === 'Enter') {
+			sendMessage()
+		}
+	}
+
 	return (
 		<Style>
 			<FlexRow justify="center">
@@ -165,6 +171,7 @@ export function Chat({ jwt, isModerator, userName }: { jwt: string, isModerator:
 									<FlexColumn span={21}>
 										<FlexRow style={{ height: 50 }}>
 											<Input
+												onKeyDown={keyPressEnter}
 												placeholder={'Введите вопрос'}
 												{...messageInput}
 											/>

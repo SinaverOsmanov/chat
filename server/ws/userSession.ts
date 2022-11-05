@@ -45,7 +45,7 @@ export class UserSessionProcessor {
           .find({
             eventId,
             $or: [{ isConfirmed: true }, { senderId: clientId }],
-          })
+          }, { sort: {_id: "desc"}})
           .limit(30)
           .toArray();
     }
@@ -112,16 +112,6 @@ export class UserSessionProcessor {
 
       if (!acknowledged) throw new Error("insertOne doesn't acknowledged");
 
-      //
-      // const createResponse = (responseMessage: MessageRecord, clientId:string): WsMessage => {
-      //   const responseData: WsMessage = {
-      //     type: 'message',
-      //     data: messageDto(responseMessage),
-      //   };
-      //   return responseData
-      // };
-
-
       const eventClients = this.eventGetter(this.eventId);
 
       const responseData: WsMessage = {
@@ -130,7 +120,9 @@ export class UserSessionProcessor {
       };
 
       eventClients.forEach((e) => {
-        if (
+        if(responseData.data.isConfirmed && moderator) {
+          e.session.sendMessage(responseData)
+        } else if (
             e.session.isModerator ||
             responseMessage.senderId === e.ws.clientId
         ) {
@@ -324,7 +316,7 @@ export class UserSessionProcessor {
                     { senderId: userObjectId },
                   ],
                 },
-                { limit: 30 }
+                { sort: {_id: "desc"}}
             )
             .toArray();
       } else {
@@ -334,7 +326,8 @@ export class UserSessionProcessor {
                   eventId: this.eventId,
                   senderId: userObjectId,
                 },
-                { limit: 30 }
+
+                { sort: {_id: "desc"}, limit: 30}
             )
             .toArray();
       }
@@ -348,7 +341,8 @@ export class UserSessionProcessor {
                   eventId: this.eventId,
                   $or: [{ isConfirmed: true }, { senderId: userObjectId }],
                 },
-                { limit: 30 }
+
+                { sort: {_id: "desc"}, limit: 30}
             )
             .toArray();
       }
