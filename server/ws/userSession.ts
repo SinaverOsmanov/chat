@@ -331,6 +331,8 @@ export class UserSessionProcessor {
             )
             .toArray();
       }
+    } else if (data.filter === 'unconfirmed') {
+      foundMessages = await messages.find({ eventId: this.eventId, isConfirmed: false }).toArray();
     } else {
       if (this.isModerator) {
         foundMessages = await messages.find({ eventId: this.eventId }).toArray();

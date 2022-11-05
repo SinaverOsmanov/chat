@@ -25,18 +25,23 @@ import { FlexColumn, FlexRow } from 'helpers/layoutStyle'
 import { useScroll } from '../../hooks/useScroll'
 import { Title } from '../ui/Title'
 
-// change logic when will have created auth
-// const isModerator = true
+type ChatTypeProps = { jwt: string, isModerator: boolean, userName: string }
 
-export function Chat({ jwt, isModerator, userName }: { jwt: string, isModerator: boolean, userName: string }) {
+export function Chat({ jwt, isModerator, userName }: ChatTypeProps) {
 	const [selectedSort, setSelectedSort] = useState('asc')
 	const [selectedSender, setSelectedSender] = useState('anonym')
 	const [tab, setTab] = useState('all')
 	const [messages, setMessages] = useState<MessageType[]>([])
 	const messageInput = useInput('')
+
+	// TODO: Scroll
 	// const scroll = useScroll({ messages: messages })
 
 	const { messageHistory, connectionStatus, sendMessageClick } = useChat(jwt)
+
+	function getTabItems(isModerator: boolean) {
+		return isModerator ? [...items, {label: 'Не подтвержденные', key: 'unconfirmed', children: ''}] : items
+	}
 
 	function sendMessage() {
 		if (messageInput.value !== '') {
@@ -83,6 +88,7 @@ export function Chat({ jwt, isModerator, userName }: { jwt: string, isModerator:
 		setSelectedSender(person)
 	},[isModerator])
 
+	// TODO: Scroll
 	// useEffect(() => {
 	// 	if (scroll.checked) {
 	// 		const scrollElement: Element | null =
@@ -116,7 +122,7 @@ export function Chat({ jwt, isModerator, userName }: { jwt: string, isModerator:
 									<Tabs
 										defaultActiveKey={'all'}
 										onChange={changeTabCallback}
-										items={items}
+										items={getTabItems(isModerator)}
 									/>
 								</FlexRow>
 							</FlexColumn>

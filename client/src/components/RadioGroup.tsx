@@ -14,11 +14,6 @@ const RadioGroupStyle = styled(RadioGroupWrapper)`
 
 const RadioGroup: React.FC<RadioGroupProps> = ({onChange, value, isModerator, userName}) => {
 
-    // const [select, setSelected] = useState(value)
-    //
-    //
-    // useEffect(() => setSelected(value), [isModerator, onChange])
-
     return (
         <FlexRow>
             <RadioGroupStyle defaultValue={isModerator ? 'moderator' : value} onChange={onChange} value={value}>
