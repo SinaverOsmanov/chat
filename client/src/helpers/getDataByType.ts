@@ -1,6 +1,6 @@
 import {messageDto} from "./transferObject";
 import {MessageType, ModeratorMessageType, TypeWSMessage} from "../../../common/dto/types";
-import {ConfirmedMessage, LikeMessage, RemoveMessage, WsMessage} from "../../../common/dto/dto";
+import {LikeMessage, RemoveMessage} from "../../../common/dto/dto";
 
 type setDataTypeProps = {
     type: TypeWSMessage,
@@ -29,7 +29,7 @@ class WebSocketServices {
         return this.getMessages()
     }
 
-    getMessages() {
+    getMessages(): MessageType[] {
         return this.messages
     }
 
@@ -38,6 +38,7 @@ class WebSocketServices {
 
         if (foundMessage) {
             foundMessage.likes = data.count
+            console.log(foundMessage.likes)
         }
         return this.getMessages()
     }
@@ -52,6 +53,7 @@ class WebSocketServices {
 
         if (foundMessage) {
             foundMessage.isConfirmed = data.isConfirmed
+            foundMessage.dateConfirmed = data.dateConfirmed
         } else {
             this.setMessage(data)
         }

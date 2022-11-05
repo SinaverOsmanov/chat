@@ -111,10 +111,10 @@ async function initCollection(db: Db) {
   const collections = await db.listCollections().toArray();
 
   try {
-    if (collections.find((x) => x.name === "messages")) {
+    if (!collections.find((x) => x.name === "messages")) {
       await db.createCollection("messages");
     }
-    if (collections.find((x) => x.name === "moderators")) {
+    if (!collections.find((x) => x.name === "moderators")) {
       const moderators = await db.createCollection("moderators");
       if (!(await moderators.indexExists("moderatorId"))) {
         await moderators.createIndex({ moderatorId: -1 });

@@ -2,14 +2,24 @@ import React from 'react'
 import styled from 'styled-components'
 
 type IconType = {
-	icon: React.ReactNode | JSX.Element
+	icon: React.ReactNode | JSX.Element,
+	color?: string
 }
 
 type IconPropsType = React.PropsWithChildren<IconType>
 
-const IconStyle = styled.i`
+const IconStyle = styled.i<{color?: string}>`
 	color: black;
-	cursor: pointer;
+	
+	&:hover {
+		cursor: pointer;
+	}
+	
+	path {
+		fill: ${({color}) => color || 'gray' };
+		stroke: ${({color}) => color || 'gray' };
+		stroke-width: 0;
+	}
 `
 
 const Icon: React.FC<IconPropsType> = ({ icon, ...rest }) => {

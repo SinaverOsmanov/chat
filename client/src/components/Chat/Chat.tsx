@@ -28,20 +28,20 @@ import { Title } from '../ui/Title'
 // change logic when will have created auth
 // const isModerator = true
 
-export function Chat({ jwt, isModerator }: { jwt: string, isModerator: boolean }) {
+export function Chat({ jwt, isModerator, userName }: { jwt: string, isModerator: boolean, userName: string }) {
 	const [selectedSort, setSelectedSort] = useState('asc')
-	const [selectedSender, setSelectedSender] = useState(isModerator ? 'moderator' : 'anonym')
+	const [selectedSender, setSelectedSender] = useState('anonym')
 	const [tab, setTab] = useState('all')
 	const [messages, setMessages] = useState<MessageType[]>([])
 	const messageInput = useInput('')
-	const scroll = useScroll({ messages: messages })
+	// const scroll = useScroll({ messages: messages })
 
 	const { messageHistory, connectionStatus, sendMessageClick } = useChat(jwt)
 
 	function sendMessage() {
 		if (messageInput.value !== '') {
 			const senderName =
-				selectedSender === 'anonym' ? 'Аноним' : 'Пользователь'
+				selectedSender === 'anonym' ? 'Аноним' : userName
 
 			const data = {
 				sender: isModerator ? 'Модератор' : senderName,
@@ -78,18 +78,23 @@ export function Chat({ jwt, isModerator }: { jwt: string, isModerator: boolean }
 		}
 	}, [tab])
 
-	useEffect(() => {
-		if (scroll.checked) {
-			const scrollElement: Element | null =
-				document.querySelector('.scroll')
-			const scrollHeightElement: Element | null =
-				document.querySelector('.scrollHeight')
+	useEffect(()=>{
+		const person = isModerator ? 'moderator' : 'anonym'
+		setSelectedSender(person)
+	},[isModerator])
 
-			if (!!scrollElement && !!scrollHeightElement) {
-				scrollElement.scrollTo(0, scrollHeightElement.scrollHeight)
-			}
-		}
-	}, [messages.length, scroll])
+	// useEffect(() => {
+	// 	if (scroll.checked) {
+	// 		const scrollElement: Element | null =
+	// 			document.querySelector('.scroll')
+	// 		const scrollHeightElement: Element | null =
+	// 			document.querySelector('.scrollHeight')
+	//
+	// 		if (!!scrollElement && !!scrollHeightElement) {
+	// 			scrollElement.scrollTo(0, scrollHeightElement.scrollHeight)
+	// 		}
+	// 	}
+	// }, [messages.length, scroll])
 
 	return (
 		<Style>
@@ -152,6 +157,7 @@ export function Chat({ jwt, isModerator }: { jwt: string, isModerator: boolean }
                                             onChange={selectedSenderCallback}
                                             value={selectedSender}
                                             isModerator={isModerator}
+											userName={userName}
                                         />
 									</FlexColumn>
 								</FlexRow>
@@ -167,7 +173,7 @@ export function Chat({ jwt, isModerator }: { jwt: string, isModerator: boolean }
 									<FlexColumn span={2} offset={1}>
 										<FlexRow align={'middle'}>
 											<SendButton onClick={sendMessage}>
-												<Icon icon={send} />
+												<Icon icon={send} color={'#fff'} />
 											</SendButton>
 										</FlexRow>
 									</FlexColumn>

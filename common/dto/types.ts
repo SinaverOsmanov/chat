@@ -20,6 +20,9 @@ export type MessageType = {
     answer: ModeratorMessageType | null;
     eventId: string;
 };
+
+export type MessageTypeLikedByMe = MessageType & {isLikedByMe: boolean}
+
 //
 //
 //

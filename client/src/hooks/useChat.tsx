@@ -18,7 +18,7 @@ export const useChat = (jwt: string) => {
 	const { eventId } = useParams()
 
 	const memoizedEvent = useMemo(
-		() => `ws://my.codish.ru:8088/${eventId}`,
+		() => `ws://localhost:8080/${eventId}`,
 		[eventId]
 	)
 

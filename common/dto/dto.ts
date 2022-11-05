@@ -1,35 +1,37 @@
-import { MessageType, ModeratorMessageType, TypeWSMessage } from "./types";
+import {MessageType, ModeratorMessageType} from "./types";
 
 export type LikeMessage = { count: number; messageId: string };
 export type ConfirmedMessage = { messageId: string };
 export type RemoveMessage = { messageId: string }
+export type ReplyToMessage = { messageId: string, reply: string }
+export type GetMessages = { filter:string }
 
 export type WsMessage =
     | {
-    type: TypeWSMessage;
+    type: 'connect';
     data: MessageType[];
 }
     | {
-    type: TypeWSMessage;
+    type: 'message';
     data: MessageType;
 }
     | {
-    type: TypeWSMessage;
+    type: 'likes';
     data: LikeMessage;
 }
     | {
-    type: TypeWSMessage
-    data: ConfirmedMessage;
+    type: 'confirmedMessage'
+    data: MessageType;
 }
     | {
-    type: TypeWSMessage
-    data: ModeratorMessageType
+    type: 'replyToMessage'
+    data: ReplyToMessage | ModeratorMessageType
 }
     | {
-    type: TypeWSMessage
+    type: 'removeMessage'
     data: RemoveMessage;
 }
     | {
-    type: TypeWSMessage,
+    type: 'getMessages',
     data: MessageType[]
 }

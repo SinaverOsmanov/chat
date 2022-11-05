@@ -2,9 +2,17 @@ import {ApplicationDb, ensureTypeDatabase} from "../helpers/mongoDatabase";
 import {Db, ModifyResult, ObjectId, WithId} from "mongodb";
 import {isModerator} from "../helpers/isModerator";
 import {ConnectionEntry, MessageRecord, SendMessage} from "../types";
-import {MessageType} from "../../common/dto/types";
+import {MessageType, MessageTypeLikedByMe, ModeratorMessageType, TypeWSMessage} from "../../common/dto/types";
 import {messageDto} from "../helpers/messageDto";
-import {ConfirmedMessage, LikeMessage, RemoveMessage, WsMessage,} from "../../common/dto/dto";
+import {
+  ConfirmedMessage,
+  GetMessages,
+  LikeMessage,
+  RemoveMessage,
+  ReplyToMessage,
+  WsMessage,
+} from "../../common/dto/dto";
+import {isLikedMessage} from "../helpers/isLikedMessage";
 
 export class UserSessionProcessor {
   private constructor(
@@ -104,12 +112,22 @@ export class UserSessionProcessor {
 
       if (!acknowledged) throw new Error("insertOne doesn't acknowledged");
 
+      //
+      // const createResponse = (responseMessage: MessageRecord, clientId:string): WsMessage => {
+      //   const responseData: WsMessage = {
+      //     type: 'message',
+      //     data: messageDto(responseMessage),
+      //   };
+      //   return responseData
+      // };
+
+
+      const eventClients = this.eventGetter(this.eventId);
+
       const responseData: WsMessage = {
         type: 'message',
         data: messageDto(responseMessage),
       };
-
-      const eventClients = this.eventGetter(this.eventId);
 
       eventClients.forEach((e) => {
         if (
@@ -129,43 +147,51 @@ export class UserSessionProcessor {
       const { messages } = this.db;
 
       const m = await messages.findOne({ _id: new ObjectId(data.messageId) });
+      if(!m) throw new Error('message not found')
 
-      const foundIfHaveLike = m?.likes.find(
-          (like) => like.toHexString() === this.clientId
-      );
+      const foundIfHaveLike = isLikedMessage(m.likes, this.clientId)
+
+      let message: ModifyResult<MessageRecord>;
 
       if (foundIfHaveLike) {
-        return;
+        message = await messages.findOneAndUpdate(
+            {
+              _id: new ObjectId(data.messageId),
+            },
+            {
+              $pull: {
+                likes: new ObjectId(this.clientId),
+              },
+            },
+            {returnDocument: 'after'}
+        );
+      } else {
+        message = await messages.findOneAndUpdate(
+            {
+              _id: new ObjectId(data.messageId),
+            },
+            {
+              $addToSet: {
+                likes: new ObjectId(this.clientId),
+              },
+            },
+            {returnDocument: 'after'}
+        );
       }
 
-      const message = await messages.findOneAndUpdate(
-          {
-            _id: new ObjectId(data.messageId),
-          },
-          {
-            $addToSet: {
-              likes: new ObjectId(this.clientId),
-            },
-          }
-      );
-
-      if (!!message.ok) {
+      if (message.ok && message.value) {
         let eventClients = this.eventGetter(this.eventId);
 
         if (!eventClients) throw new Error("no event");
 
-        let likesCount = 0;
-
-        if (message.value) {
-          likesCount = message.value.likes.length + 1;
-        }
+        const countLikes = message.value.likes.length
 
         eventClients.forEach((e) => {
           e.session.sendMessage({
             type: 'likes',
             data: {
               messageId: data.messageId,
-              count: likesCount,
+              count: countLikes,
             },
           });
         });
@@ -175,7 +201,7 @@ export class UserSessionProcessor {
     }
   }
 
-  async processReply(data: { messageId: string; reply: string }) {
+  async processReply(data: ReplyToMessage) {
     try {
       const { messages } = this.db;
 
@@ -258,7 +284,7 @@ export class UserSessionProcessor {
       return;
     }
     const { messages } = this.db;
-    const {ok, value}: ModifyResult<MessageRecord> = await messages.findOneAndUpdate(
+    const { ok, value }: ModifyResult<MessageRecord> = await messages.findOneAndUpdate(
         {
           _id: new ObjectId(data.messageId)
         },
@@ -274,21 +300,20 @@ export class UserSessionProcessor {
     if (ok && value) {
       let eventClients = this.eventGetter(this.eventId);
 
-      eventClients.forEach((e) => {
-        e.session.sendMessage({
-          type: 'confirmedMessage',
-          data: messageDto(value),
-        });
+      eventClients.forEach((e) => {e.session.sendMessage({
+        type: 'confirmedMessage',
+        data: messageDto(value),
+      })
       });
     }
   }
 
-  async processGetMessages(data: { filter: string }) {
+  async processGetMessages(data: GetMessages) {
     const { messages } = this.db;
-
+    const userObjectId = this.clientId;
     let foundMessages;
+
     if (data.filter === "my") {
-      const userObjectId = this.clientId;
       if (this.isModerator) {
         foundMessages = await messages
             .find(
@@ -314,18 +339,22 @@ export class UserSessionProcessor {
             .toArray();
       }
     } else {
-      foundMessages = await messages
-          .find(
-              {
-                eventId: this.eventId,
-                $or: [{ isConfirmed: true }, { senderId: this.clientId }],
-              },
-              { limit: 30 }
-          )
-          .toArray();
+      if (this.isModerator) {
+        foundMessages = await messages.find({ eventId: this.eventId }).toArray();
+      } else {
+        foundMessages = await messages
+            .find(
+                {
+                  eventId: this.eventId,
+                  $or: [{ isConfirmed: true }, { senderId: userObjectId }],
+                },
+                { limit: 30 }
+            )
+            .toArray();
+      }
     }
 
-    const mappedMessages: MessageType[] = foundMessages.map(messageDto);
+    const mappedMessages: MessageType[] = foundMessages.map((m)=>messageDto(m));
 
     await this.sendMessage({
       type: 'getMessages',

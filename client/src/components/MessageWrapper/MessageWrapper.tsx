@@ -1,21 +1,28 @@
-import React from "react";
+import React, {useRef, useState} from "react";
 import {getDateTime} from "../../helpers/getDateTime";
 import Icon from "../ui/Icon";
 import {like} from "../../assets/svg";
 import Input from "../ui/Input/Input";
-import {MessageType} from "../../../../common/dto/types";
+import {MessageType, TypeWSMessage} from "../../../../common/dto/types";
 import {Button, RemoveButton} from "../ui/Button/Button";
-import {MessageWrapperStyle, SenderMessageStyle, TextMessageStyle, DateMessageStyle, ModeratorAnswerStyle} from "./style";
+import {
+    MessageWrapperStyle,
+    SenderMessageStyle,
+    TextMessageStyle,
+    DateMessageStyle,
+    ModeratorAnswerStyle
+} from "./style";
 import {useInput} from "../../hooks/useInput";
-import {FlexColumn, FlexRow } from "helpers/layoutStyle";
+import {FlexColumn, FlexRow} from "helpers/layoutStyle";
 
 type MessageWrapperType = {
     message: MessageType
-    onSendMessage: (data: any, type: string) => void
+    onSendMessage: (data: any, type: TypeWSMessage) => void
     isModerator: boolean
 }
 
 function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperType) {
+
     const answerInput = useInput('')
 
     function confirmedMessage(id: string) {
@@ -34,7 +41,7 @@ function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperTyp
         }
     }
 
-    function countClick(id: string) {
+    function likeMessage(id: string) {
         onSendMessage({messageId: id}, 'likes')
     }
 
@@ -45,15 +52,23 @@ function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperTyp
                     <FlexColumn span={16}>
                         <FlexRow>
                             <SenderMessageStyle>{message.sender}</SenderMessageStyle>
-                            {
-                                message.dateConfirmed && <DateMessageStyle>
-                                    <FlexRow>
-                                        <FlexColumn>{getDateTime(message.dateConfirmed).newDate}</FlexColumn>
-                                        <FlexColumn>{getDateTime(message.dateConfirmed).time}</FlexColumn>
 
-                                    </FlexRow>
-                                </DateMessageStyle>
-                            }
+                            <DateMessageStyle>
+                                {
+                                    message.dateConfirmed ?
+
+                                        <FlexRow>
+                                            <FlexColumn>{getDateTime(message.dateConfirmed).newDate}</FlexColumn>
+                                            <FlexColumn>{getDateTime(message.dateConfirmed).time}</FlexColumn>
+                                        </FlexRow>
+                                        : <FlexRow>
+                                            <FlexColumn>
+                                                Не подтвержденно
+                                            </FlexColumn>
+                                        </FlexRow>
+                                }
+                            </DateMessageStyle>
+
                         </FlexRow>
                     </FlexColumn>
                     <FlexColumn span={8}>
@@ -63,7 +78,7 @@ function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperTyp
                                 align="middle"
                             >
                                 <FlexColumn>
-								<span onClick={() => countClick(message._id)}>
+								<span onClick={() => likeMessage(message._id)}>
 									<Icon icon={like}/>
 								</span>
                                 </FlexColumn>

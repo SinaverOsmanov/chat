@@ -1,16 +1,18 @@
 import {generateJWT} from "./generateJwt";
+import { HmacSHA256, enc } from 'crypto-js'
 
 export const moderatorToken =
 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiTW9kZXJhdG9yIiwidXNlck5hbWUiOiJVc2VyMSIsInVzZXJJZCI6IjYzMjVkODBmZTA2Njg4ZDE1YTYyMGRiZiIsImVtYWlsIjoic29tZUBlbWFpbC5jb20iLCJpYXQiOjE2NjM2MDI1NDEsImlzTW9kZXJhdG9yIjp0cnVlfQ.Z1KlQlpSoG9TIEhFfZlzd1QirHjaPvWGRphtyCC4D3A'
 export const userToken =
 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiVXNlciIsInVzZXJOYW1lIjoiVXNlcjIiLCJ1c2VySWQiOiI2MzI1ZDgwZmUwNjY4OGQxNWE2MjBkYmQiLCJlbWFpbCI6InNvbWUyQGVtYWlsLmNvbSIsImlhdCI6MTY2MzYwMjU0MiwiaXNNb2RlcmF0b3IiOmZhbHNlfQ.IJBFqxkph2Ed_PvVzRwfmhUOI9XhAMEp8GTH6UceTqA'
-
 export const user2Token =
 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiVXNlciIsInVzZXJOYW1lIjoiVXNlcjMiLCJ1c2VySWQiOiI2MzI1ZDgwZmUwNjY4OGQxNWE2MjBkYmEiLCJlbWFpbCI6InNvbWUzQGVtYWlsLmNvbSIsImlhdCI6MTY2MzYwMjU0MSwiaXNNb2RlcmF0b3IiOmZhbHNlfQ.rsJilzFvk1xeWYy1ClcGCwkP21Bw4R4l3vi6qTsFPiw'
 
-import { HmacSHA256, enc } from 'crypto-js'
-
-export default {moderator:moderatorToken, user:userToken, user2: user2Token}
+export const optionsToken = [
+	{value: moderatorToken, title: 'Модератор'},
+	{value: userToken, title: 'Пользователь 1'},
+	{value: user2Token, title: 'Пользователь 2'},
+]
 
 // https://stackoverflow.com/questions/67432096/generating-jwt-tokens
 export async function makeJwt(userName: string, isModerator: boolean) {

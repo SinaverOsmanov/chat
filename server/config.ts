@@ -15,7 +15,7 @@ const behavior: WebSocketBehavior = {
 };
 
 const config = {
-  mongoUrl: "mongodb://localhost/kaspersky",
+  mongoUrl: "mongodb://localhost:27017/chat",
   mongoDbName: "chat",
   port: parseInt(process.env["PORT"] || "8080", 10),
 };
