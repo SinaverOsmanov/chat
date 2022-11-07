@@ -93,6 +93,7 @@ export class UserSessionProcessor {
   async processSendMessage(data: MessageType) {
     try {
       const { messages } = this.db;
+      const envWithM = process.env.ENVIRONMENT_WITH_MODERATOR
       if (!(await messages.indexExists("eventId"))) {
         await messages.createIndex({ eventId: -1 });
       }
@@ -104,9 +105,9 @@ export class UserSessionProcessor {
         sender: data.sender,
         text: data.text,
         likes: [],
-        dateConfirmed: moderator ? new Date() : null,
+        dateConfirmed: envWithM ? new Date() : moderator ? new Date() : null,
         created: new Date(),
-        isConfirmed: moderator,
+        isConfirmed: envWithM ? true : moderator,
         answer: null,
         eventId: this.eventId,
       };
@@ -123,7 +124,7 @@ export class UserSessionProcessor {
       };
 
       eventClients.forEach((e) => {
-        if(responseData.data.isConfirmed && moderator) {
+        if(responseData.data.isConfirmed && moderator || envWithM) {
           e.session.sendMessage(responseData)
         } else if (
             e.session.isModerator ||
