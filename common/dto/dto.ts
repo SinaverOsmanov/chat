@@ -5,6 +5,7 @@ export type ConfirmedMessage = { messageId: string };
 export type RemoveMessage = { messageId: string }
 export type ReplyToMessage = { messageId: string, reply: string }
 export type GetMessages = { filter:string }
+export type LoadMoreMessages = { firstMessage:string, lengthMessages: number}
 
 export type WsMessage =
     | {
@@ -34,4 +35,7 @@ export type WsMessage =
     | {
     type: 'getMessages',
     data: MessageType[]
+} | {
+  type: 'loadMoreMessages',
+  data: {messages: MessageType[], isHaveMessages: boolean }
 }

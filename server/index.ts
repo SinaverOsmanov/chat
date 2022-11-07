@@ -8,8 +8,14 @@ import { parseToken } from "./helpers/parseToken";
 import { parseMessage } from "./helpers/parseMessage";
 import { sendMessage } from "./helpers/sendMessage";
 import { clients, getEvent } from "./services/getEvent";
+import * as dotenv from 'dotenv'
+dotenv.config({path: '../.env'})
 
 const app = App(config.options);
+
+
+console.log(process.env.ENVIRONMENT_WITH_MODERATOR)
+
 
 function makeServer(db: Db): TemplatedApp {
   const serverApp = app.ws("/:event", {

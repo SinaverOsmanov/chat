@@ -1,7 +1,8 @@
 import styled from "styled-components";
 import {FlexColumn, FlexRow} from "../../helpers/layoutStyle";
+import {Button} from "../ui/Button/Button";
 
-export const Style = styled(FlexColumn)`
+export const ChatStyle = styled(FlexColumn)`
 	max-width: 650px;
 	background: #fff;
 	/* Grayscale/#FFFFFF */
@@ -10,6 +11,11 @@ export const Style = styled(FlexColumn)`
 	box-shadow: 0 4px 40px rgba(92, 133, 150, 0.2);
 	border-radius: 16px;
 	padding: 30px;
+`
+
+
+export const LoadMoreWrapper = styled(FlexRow)`
+    margin-bottom: 20px;
 `
 
 export const DialogLayout = styled(FlexRow)`

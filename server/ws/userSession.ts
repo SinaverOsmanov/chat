@@ -1,5 +1,5 @@
 import {ApplicationDb, ensureTypeDatabase} from "../helpers/mongoDatabase";
-import {Db, ModifyResult, ObjectId, WithId} from "mongodb";
+import {Collection, Db, ModifyResult, ObjectId, WithId} from "mongodb";
 import {isModerator} from "../helpers/isModerator";
 import {ConnectionEntry, MessageRecord, SendMessage} from "../types";
 import {MessageType, MessageTypeLikedByMe, ModeratorMessageType, TypeWSMessage} from "../../common/dto/types";
@@ -7,12 +7,13 @@ import {messageDto} from "../helpers/messageDto";
 import {
   ConfirmedMessage,
   GetMessages,
-  LikeMessage,
+  LikeMessage, LoadMoreMessages,
   RemoveMessage,
   ReplyToMessage,
   WsMessage,
 } from "../../common/dto/dto";
 import {isLikedMessage} from "../helpers/isLikedMessage";
+import {getFilteredMessages} from "../services/getFilteredMessages";
 
 export class UserSessionProcessor {
   private constructor(
@@ -84,6 +85,8 @@ export class UserSessionProcessor {
       await this.processConfirmedMessages(data);
     } else if (type === 'message') {
       await this.processSendMessage(data);
+    } else if (type === 'loadMoreMessages') {
+      await this.processLoadMoreMessages(data)
     }
   }
 
@@ -300,23 +303,24 @@ export class UserSessionProcessor {
     }
   }
 
-  async processGetMessages(data: GetMessages) {
-    const { messages } = this.db;
-    const userObjectId = this.clientId;
-    let foundMessages;
+  async processLoadMoreMessages(data: LoadMoreMessages & {filter: string} ) {
+    const {messages} = this.db
+    const documentsLength = await messages.countDocuments()
+    const isHaveMessages = documentsLength === data.lengthMessages
+    let foundMessages: MessageRecord[] = [];
 
-    if (data.filter === "my") {
-      if (this.isModerator) {
+
+    if(!isHaveMessages) {
+      if (data.filter === 'my') {
         foundMessages = await messages
             .find(
                 {
                   eventId: this.eventId,
-                  $or: [
-                    { "answer.moderatorId": userObjectId },
-                    { senderId: userObjectId },
-                  ],
+                  senderId: this.clientId,
+
+                  _id: {$lt: new ObjectId(data.firstMessage)}
                 },
-                { sort: {_id: "desc"}}
+                {sort: {_id: "desc"}, limit: 30}
             )
             .toArray();
       } else {
@@ -324,31 +328,33 @@ export class UserSessionProcessor {
             .find(
                 {
                   eventId: this.eventId,
-                  senderId: userObjectId,
-                },
 
-                { sort: {_id: "desc"}, limit: 30}
-            )
-            .toArray();
-      }
-    } else if (data.filter === 'unconfirmed') {
-      foundMessages = await messages.find({ eventId: this.eventId, isConfirmed: false }).toArray();
-    } else {
-      if (this.isModerator) {
-        foundMessages = await messages.find({ eventId: this.eventId }).toArray();
-      } else {
-        foundMessages = await messages
-            .find(
-                {
-                  eventId: this.eventId,
-                  $or: [{ isConfirmed: true }, { senderId: userObjectId }],
+                  _id: {$lt: new ObjectId(data.firstMessage)}
                 },
-
-                { sort: {_id: "desc"}, limit: 30}
+                {sort: {_id: "desc"}, limit: 30}
             )
             .toArray();
       }
     }
+
+
+    const mappedMessages: MessageType[] = !!foundMessages.length
+        ? foundMessages.map((m)=>messageDto(m))
+        : [];
+
+    await this.sendMessage({
+      type: 'loadMoreMessages',
+      data: {
+        messages: mappedMessages,
+        isHaveMessages: mappedMessages.length + data.lengthMessages === documentsLength},
+    });
+
+  }
+
+  async processGetMessages(data: GetMessages) {
+    const { messages } = this.db;
+
+    const foundMessages = await getFilteredMessages(messages, this.isModerator, data.filter, this.clientId, this.eventId)
 
     const mappedMessages: MessageType[] = foundMessages.map((m)=>messageDto(m));
 

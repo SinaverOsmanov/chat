@@ -70,8 +70,12 @@ class WebSocketServices {
         return this.getMessages()
     }
 
-}
+    loadMoreMessages(data: {messages: MessageType[], isHaveMessages: boolean }) {
 
+        const withLoadedMessages = [...data.messages, ...this.messages]
+        return this.setMessages(withLoadedMessages)
+    }
+}
 
 export function getDataByType({type, data, messages}: setDataTypeProps): MessageType[] {
 
@@ -91,6 +95,8 @@ export function getDataByType({type, data, messages}: setDataTypeProps): Message
         return ws.removeById(data)
     } else if (type === 'confirmedMessage') {
         return ws.setConfirmed(data)
+    } else if (type === 'loadMoreMessages') {
+        return ws.loadMoreMessages(data)
     } else {
         return ws.getMessages()
     }

@@ -38,4 +38,4 @@ export type MessageTypeLikedByMe = MessageType & {isLikedByMe: boolean}
 
 
 
-export type TypeWSMessage = 'connect' | 'message' | "likes" | 'confirmedMessage' | 'replyToMessage' | 'removeMessage' | 'getMessages'
+export type TypeWSMessage = 'connect' | 'loadMoreMessages' | 'message' | "likes" | 'confirmedMessage' | 'replyToMessage' | 'removeMessage' | 'getMessages'
