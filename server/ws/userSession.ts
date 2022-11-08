@@ -14,6 +14,7 @@ import {
 } from "../../common/dto/dto";
 import {isLikedMessage} from "../helpers/isLikedMessage";
 import {getFilteredMessages} from "../services/getFilteredMessages";
+import {parseEnvorimentWithModerator} from "../helpers/parseEnvorimentWithModerator";
 
 export class UserSessionProcessor {
   private constructor(
@@ -93,24 +94,37 @@ export class UserSessionProcessor {
   async processSendMessage(data: MessageType) {
     try {
       const { messages } = this.db;
-      const envWithM = process.env.ENVIRONMENT_WITH_MODERATOR
+      const envWithModerator = !!(await parseEnvorimentWithModerator(process.env.ENVIRONMENT_WITH_MODERATOR))
       if (!(await messages.indexExists("eventId"))) {
         await messages.createIndex({ eventId: -1 });
       }
       const moderator = this.isModerator;
 
+      let confirmedMessageData;
+
+      if(envWithModerator){
+        confirmedMessageData = {
+          dateConfirmed: moderator ? new Date() : null,
+          isConfirmed: moderator,
+        }
+      } else {
+        confirmedMessageData = {
+          dateConfirmed: new Date(),
+          isConfirmed: true,
+        }
+      }
+
       const responseMessage: MessageRecord = {
-        _id: new ObjectId(),
-        senderId: this.clientId,
-        sender: data.sender,
-        text: data.text,
-        likes: [],
-        dateConfirmed: envWithM ? new Date() : moderator ? new Date() : null,
-        created: new Date(),
-        isConfirmed: envWithM ? true : moderator,
-        answer: null,
-        eventId: this.eventId,
-      };
+            _id: new ObjectId(),
+            senderId: this.clientId,
+            sender: data.sender,
+            text: data.text,
+            likes: [],
+            created: new Date(),
+            answer: null,
+            eventId: this.eventId,
+            ...confirmedMessageData
+          }
 
       const { acknowledged } = await messages.insertOne(responseMessage);
 
@@ -123,16 +137,23 @@ export class UserSessionProcessor {
         data: messageDto(responseMessage),
       };
 
-      eventClients.forEach((e) => {
-        if(responseData.data.isConfirmed && moderator || envWithM) {
+
+      if(envWithModerator) {
+        eventClients.forEach((e) => {
+          if(responseData.data.isConfirmed && moderator) {
+            e.session.sendMessage(responseData)
+          } else if (
+              e.session.isModerator ||
+              responseMessage.senderId === e.ws.clientId
+          ) {
+            e.session.sendMessage(responseData);
+          }
+        });
+      } else {
+        eventClients.forEach((e) => {
           e.session.sendMessage(responseData)
-        } else if (
-            e.session.isModerator ||
-            responseMessage.senderId === e.ws.clientId
-        ) {
-          e.session.sendMessage(responseData);
-        }
-      });
+        })
+      }
     } catch (e) {
       console.log(e);
     }
