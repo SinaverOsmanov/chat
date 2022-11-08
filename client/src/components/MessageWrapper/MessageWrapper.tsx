@@ -71,7 +71,6 @@ function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperTyp
                                         </FlexRow>
                                 }
                             </DateMessageStyle>
-
                         </FlexRow>
                     </FlexColumn>
                     <FlexColumn span={8}>
@@ -82,7 +81,7 @@ function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperTyp
                             >
                                 <FlexColumn>
 								<span onClick={() => likeMessage(message._id)}>
-									<Icon icon={like} color={isLiked ? 'blue' : ''}/>
+									<Icon icon={like} color={isLiked === undefined ? '' : isLiked ? 'blue' : ''}/>
 								</span>
                                 </FlexColumn>
                                 {message.likes > 0 && (
