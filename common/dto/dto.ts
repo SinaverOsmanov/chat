@@ -10,7 +10,7 @@ export type LoadMoreMessages = { firstMessage:string, lengthMessages: number}
 export type WsMessage =
     | {
     type: 'connect';
-    data: MessageType[];
+    data: MessageType[]
 }
     | {
     type: 'message';

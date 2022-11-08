@@ -3,7 +3,7 @@ import {getDateTime} from "../../helpers/getDateTime";
 import Icon from "../ui/Icon";
 import {like} from "../../assets/svg";
 import Input from "../ui/Input/Input";
-import {MessageType, TypeWSMessage} from "../../../../common/dto/types";
+import {MessageType, MessageTypeLikedByMe, TypeWSMessage} from "../../../../common/dto/types";
 import {Button, RemoveButton} from "../ui/Button/Button";
 import {
     MessageWrapperStyle,
@@ -16,12 +16,14 @@ import {useInput} from "../../hooks/useInput";
 import {FlexColumn, FlexRow} from "helpers/layoutStyle";
 
 type MessageWrapperType = {
-    message: MessageType
+    message: MessageTypeLikedByMe
     onSendMessage: (data: any, type: TypeWSMessage) => void
     isModerator: boolean
 }
 
 function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperType) {
+
+    const [isLiked, setIsLiked] = useState(message.isLikedByMe)
 
     const answerInput = useInput('')
 
@@ -42,6 +44,7 @@ function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperTyp
     }
 
     function likeMessage(id: string) {
+        setIsLiked(!isLiked)
         onSendMessage({messageId: id}, 'likes')
     }
 
@@ -79,7 +82,7 @@ function MessageWrapper({isModerator, message, onSendMessage}: MessageWrapperTyp
                             >
                                 <FlexColumn>
 								<span onClick={() => likeMessage(message._id)}>
-									<Icon icon={like}/>
+									<Icon icon={like} color={isLiked ? 'blue' : ''}/>
 								</span>
                                 </FlexColumn>
                                 {message.likes > 0 && (

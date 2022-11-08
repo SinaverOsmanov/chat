@@ -53,7 +53,7 @@ export class UserSessionProcessor {
     }
 
     const mappedMessages: MessageType[] = foundMessages.map((message) =>
-        messageDto(message)
+        messageDto(message, clientId)
     );
 
     await sendMessage({
@@ -94,7 +94,7 @@ export class UserSessionProcessor {
   async processSendMessage(data: MessageType) {
     try {
       const { messages } = this.db;
-      const envWithModerator = !!(await parseEnvorimentWithModerator(process.env.ENVIRONMENT_WITH_MODERATOR))
+      const envWithModerator = await parseEnvorimentWithModerator(process.env.ENVIRONMENT_WITH_MODERATOR)
       if (!(await messages.indexExists("eventId"))) {
         await messages.createIndex({ eventId: -1 });
       }

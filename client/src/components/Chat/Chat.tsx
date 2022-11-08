@@ -16,7 +16,7 @@ import Tabs from '../ui/Tabs'
 import {Button, SendButton} from '../ui/Button/Button'
 import Icon from '../ui/Icon'
 
-import {MessageType} from '../../../../common/dto/types'
+import {MessageType, MessageTypeLikedByMe} from '../../../../common/dto/types'
 import {send} from '../../assets/svg'
 import {ChatStyle, DialogLayout, DialogWrapper, LoadMoreWrapper} from './style'
 import {Loading} from '../ui/Loading'
@@ -32,15 +32,13 @@ export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
     const [selectedSender, setSelectedSender] = useState('anonym')
     const [tab, setTab] = useState('all')
     const [isHaveMessages, setIsHaveMessages] = useState(false)
-    const [messages, setMessages] = useState<MessageType[]>([])
+    const [messages, setMessages] = useState<MessageTypeLikedByMe[]>([])
     const messageInput = useInput('')
 
     // TODO: Scroll
     // const scroll = useScroll({ messages: messages })
 
     const {messageHistory, connectionStatus, sendMessageClick, isAllMessages} = useChat(jwt)
-
-    console.log(isHaveMessages, 'isHaveMessages')
 
     function getTabItems(isModerator: boolean) {
         return isModerator
