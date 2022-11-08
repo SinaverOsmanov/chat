@@ -1,4 +1,3 @@
-
 export type ModeratorMessageType = {
     _id: string;
     text: string;
@@ -21,11 +20,8 @@ export type MessageType = {
     eventId: string;
 };
 
-export type MessageTypeLikedByMe = MessageType & {isLikedByMe: boolean}
+export type MessageTypeLikedByMe = MessageType & {isLikedByMe?: boolean}
 
-//
-//
-//
 // export enum TypeWSMessage {
 //     CONNECT = 'connect',
 //     MESSAGE = 'message',
@@ -36,6 +32,4 @@ export type MessageTypeLikedByMe = MessageType & {isLikedByMe: boolean}
 //     GET_MESSAGES = 'getMessages'
 // }
 
-
-
-export type TypeWSMessage = 'connect' | 'loadMoreMessages' | 'message' | "likes" | 'confirmedMessage' | 'replyToMessage' | 'removeMessage' | 'getMessages'
+export type TypeWSMessage = 'connect' | 'loadMoreMessages' | 'message' | 'likes' | 'confirmedMessage' | 'replyToMessage' | 'removeMessage' | 'getMessages'

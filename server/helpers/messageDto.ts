@@ -1,12 +1,13 @@
 import {MessageRecord} from "../types";
-import {MessageType, MessageTypeLikedByMe} from "../../common/dto/types";
+import {MessageType} from "../../common/dto/types";
+import {isLikedMessage} from "./isLikedMessage";
 
-export function messageDto(message: MessageRecord): MessageType {
+export function messageDto(message: MessageRecord, clientId?: string): MessageType & {isLikedByMe: boolean} {
     return {
         ...message,
         _id: message._id.toHexString(),
         likes: message.likes.length,
-        // isLikedByMe: isLikedMessage(message.likes, clientId),
+        isLikedByMe: isLikedMessage(message.likes, clientId),
         senderId: message.senderId,
         answer:
             message.answer !== null
