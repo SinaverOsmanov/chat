@@ -10,11 +10,11 @@ import { sortMessages } from '../../helpers/sortMessages'
 import MessageWrapper from '../MessageWrapper/MessageWrapper'
 import RadioGroup from '../RadioGroup'
 
-import Select from '../ui/Select/Select'
-import Input from '../ui/Input/Input'
-import Tabs from '../ui/Tabs'
-import { Button, SendButton } from '../ui/Button/Button'
-import Icon from '../ui/Icon'
+import Select from '../UI/Select/Select'
+import Input from '../UI/Input/Input'
+import Tabs from '../UI/Tabs'
+import { Button, SendButton } from '../UI/Button/Button'
+import Icon from '../UI/Icon'
 import { send } from '../../assets/svg'
 import {
     ChatStyle,
@@ -22,10 +22,10 @@ import {
     DialogWrapper,
     LoadMoreWrapper,
 } from './style'
-import { Loading } from '../ui/Loading'
+import { Loading } from '../UI/Loading'
 import { items, options } from '../../constants'
 import { FlexColumn, FlexRow } from 'helpers/layoutStyle'
-import { Title } from '../ui/Title'
+import { Title } from '../UI/Title'
 import { MessageTypeLikedByMe, TypeWSMessage } from '../../common/dto/types'
 
 type ChatTypeProps = { jwt: string; isModerator: boolean; userName: string }
@@ -171,6 +171,7 @@ export function Chat({ jwt, isModerator, userName }: ChatTypeProps) {
                                         defaultValue={selectedSort}
                                         onChange={selectedSortCallback}
                                         options={options}
+                                        defaultOption={options[0]}
                                     />
                                 </FlexRow>
                             </FlexColumn>

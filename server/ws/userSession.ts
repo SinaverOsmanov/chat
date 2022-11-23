@@ -17,6 +17,7 @@ import {
 import { isLikedMessage } from "../helpers/isLikedMessage";
 import { getFilteredMessages } from "../services/getFilteredMessages";
 import { parseEnvorimentWithModerator } from "../helpers/parseEnvorimentWithModerator";
+import { getFilteredLoadMoreMessages } from "../services/getFilteredLoadMoreMessages";
 
 export class UserSessionProcessor {
   private constructor(
@@ -344,26 +345,13 @@ export class UserSessionProcessor {
     let foundMessages: MessageRecord[] = [];
 
     if (!isHaveNotMessages) {
-      if (data.filter === "my") {
-        foundMessages = await messages
-          .find(
-            {
-              eventId: this.eventId,
-              senderId: this.clientId,
-            },
-            { sort: { _id: "desc" }, limit: 30, skip: data.lengthMessages }
-          )
-          .toArray();
-      } else {
-        foundMessages = await messages
-          .find(
-            {
-              eventId: this.eventId,
-            },
-            { sort: { _id: "desc" }, limit: 30, skip: data.lengthMessages }
-          )
-          .toArray();
-      }
+      foundMessages = await getFilteredLoadMoreMessages(
+        messages,
+        data.lengthMessages,
+        data.filter,
+        this.clientId,
+        this.eventId
+      );
     }
 
     const mappedMessages: MessageType[] = !!foundMessages.length
@@ -381,9 +369,9 @@ export class UserSessionProcessor {
 
   async processGetMessages(data: GetMessages) {
     const { messages } = this.db;
-    //
-    // const documentsLength = await messages.countDocuments();
-    // const isHaveNotMessages = documentsLength === data.lengthMessages;
+
+    const documentsLength = await messages.countDocuments();
+    const isHaveMessages = documentsLength > 30;
 
     let foundMessages: MessageRecord[] = await getFilteredMessages(
       messages,
@@ -401,7 +389,7 @@ export class UserSessionProcessor {
       type: TypeWSMessage.GET_MESSAGES,
       data: {
         messages: mappedMessages,
-        isHaveMessages: mappedMessages.length > 30,
+        isHaveMessages: mappedMessages.length === 0 ? false : isHaveMessages,
       },
     });
   }

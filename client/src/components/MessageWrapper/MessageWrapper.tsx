@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { getDateTime } from '../../helpers/getDateTime'
-import Icon from '../ui/Icon'
+import Icon from '../UI/Icon'
 import { like } from '../../assets/svg'
-import Input from '../ui/Input/Input'
+import Input from '../UI/Input/Input'
 import { MessageTypeLikedByMe, TypeWSMessage } from '../../common/dto/types'
-import { Button, RemoveButton } from '../ui/Button/Button'
+import { Button, RemoveButton } from '../UI/Button/Button'
 import {
     DateMessageStyle,
     MessageWrapperStyle,

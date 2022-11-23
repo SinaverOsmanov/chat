@@ -3,8 +3,8 @@ import React, { useState } from 'react'
 import './App.css'
 import { Chat } from './components/Chat/Chat'
 import { FlexColumn, FlexRow } from './helpers/layoutStyle'
-import Select from './components/ui/Select/Select'
-import { Button } from './components/ui/Button/Button'
+import Select from './components/UI/Select/Select'
+import { Button } from './components/UI/Button/Button'
 
 function App() {
     const [userNameValue, setUserNameValue] = useState(optionsToken[1].title)

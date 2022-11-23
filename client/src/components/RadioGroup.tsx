@@ -1,30 +1,43 @@
-import React from "react";
-import {Radio as RadioButton, RadioChangeEvent} from 'antd'
-import styled from "styled-components";
-import RadioGroupWrapper from "./ui/RadioGroupWrapper";
-import {FlexRow} from "helpers/layoutStyle";
+import React from 'react'
+import { Radio as RadioButton, RadioChangeEvent } from 'antd'
+import styled from 'styled-components'
+import RadioGroupWrapper from './UI/RadioGroupWrapper'
+import { FlexRow } from 'helpers/layoutStyle'
 
-type RadioGroupProps = { onChange(e: RadioChangeEvent): void, value: string, isModerator: boolean, userName: string }
+type RadioGroupProps = {
+    onChange(e: RadioChangeEvent): void
+    value: string
+    isModerator: boolean
+    userName: string
+}
 
 const RadioGroupStyle = styled(RadioGroupWrapper)`
-  .ant-radio-wrapper {
-    margin: 0 0 0 24px;
-  }
+    .ant-radio-wrapper {
+        margin: 0 0 0 24px;
+    }
 `
 
-const RadioGroup: React.FC<RadioGroupProps> = ({onChange, value, isModerator, userName}) => {
-
+const RadioGroup: React.FC<RadioGroupProps> = ({
+    onChange,
+    value,
+    isModerator,
+    userName,
+}) => {
     return (
         <FlexRow>
-            <RadioGroupStyle defaultValue={isModerator ? 'moderator' : value} onChange={onChange} value={value}>
-                {isModerator ?
+            <RadioGroupStyle
+                defaultValue={isModerator ? 'moderator' : value}
+                onChange={onChange}
+                value={value}
+            >
+                {isModerator ? (
                     <RadioButton value={'moderator'}>Модератор</RadioButton>
-                    :
+                ) : (
                     <>
                         <RadioButton value={'person'}>{userName}</RadioButton>
                         <RadioButton value={'anonym'}>Анонимно</RadioButton>
                     </>
-                }
+                )}
             </RadioGroupStyle>
         </FlexRow>
     )
