@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import {FlexColumn, FlexRow} from "../../helpers/layoutStyle";
-import {Button} from "../ui/Button/Button";
 
 export const ChatStyle = styled(FlexColumn)`
 	max-width: 650px;

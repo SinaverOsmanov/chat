@@ -1,5 +1,5 @@
-import {WsMessage} from "../../common/dto/dto";
+import { WsServerMessage } from "../../client/src/common/dto/dto";
 
-export function parseMessage(buffer: ArrayBuffer): WsMessage {
-    return JSON.parse(Buffer.from(buffer).toString());
+export function parseMessage(buffer: ArrayBuffer): WsServerMessage {
+  return JSON.parse(Buffer.from(buffer).toString());
 }

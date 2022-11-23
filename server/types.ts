@@ -1,11 +1,11 @@
 import { ObjectId } from "mongodb";
 import { WebSocket } from "uWebSockets.js";
-import { WsMessage } from "../common/dto/dto";
 import { UserSessionProcessor } from "./ws/userSession";
+import { WsClientMessage, WsServerMessage } from "../client/src/common/dto/dto";
 
 export type ConnectionEntry = { ws: WebSocket; session: UserSessionProcessor };
 
-export type SendMessage = (message: WsMessage) => Promise<void>;
+export type SendMessage = (message: WsClientMessage) => Promise<void>;
 
 export type TokenDataType = {
   role: string;

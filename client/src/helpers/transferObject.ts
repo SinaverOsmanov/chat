@@ -1,14 +1,19 @@
-import {MessageType} from "../../../common/dto/types";
+import { MessageType } from '../common/dto/types'
 
 function messageDto(message: MessageType) {
-    return {...message,
+    return {
+        ...message,
         created: new Date(message.created),
-        dateConfirmed: message.dateConfirmed ? new Date(message.dateConfirmed) : null,
-        answer: message.answer ? {
-            ...message.answer,
-            created: new Date(message.answer.created)
-        }: null
+        dateConfirmed: message.dateConfirmed
+            ? new Date(message.dateConfirmed)
+            : null,
+        answer: message.answer
+            ? {
+                  ...message.answer,
+                  created: new Date(message.answer.created),
+              }
+            : null,
     }
 }
 
-export {messageDto}
+export { messageDto }

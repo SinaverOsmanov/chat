@@ -1,5 +1,4 @@
 import React from 'react';
-import styled from "styled-components";
 import {Select as SelectAntd, SelectProps} from "antd";
 import { Style } from './style';
 

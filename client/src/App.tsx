@@ -1,10 +1,10 @@
-import {makeJwt, optionsToken} from 'authToken/tokens'
-import React, {useEffect, useState} from 'react'
+import { optionsToken } from 'authToken/tokens'
+import React, { useState } from 'react'
 import './App.css'
-import {Chat} from './components/Chat/Chat'
-import {FlexColumn, FlexRow} from "./helpers/layoutStyle";
-import Select from "./components/ui/Select/Select";
-import {Button} from "./components/ui/Button/Button";
+import { Chat } from './components/Chat/Chat'
+import { FlexColumn, FlexRow } from './helpers/layoutStyle'
+import Select from './components/ui/Select/Select'
+import { Button } from './components/ui/Button/Button'
 
 function App() {
     const [userNameValue, setUserNameValue] = useState(optionsToken[1].title)
@@ -16,10 +16,10 @@ function App() {
     const [jwt, setJwt] = useState<string | undefined>(userJwtValue)
 
     function selectedToken(token: string) {
-        if(token === optionsToken[1].value) {
+        if (token === optionsToken[1].value) {
             setUserNameValue('Пользователь 1')
             setIsModeratorValue(false)
-        } else if(token === optionsToken[2].value) {
+        } else if (token === optionsToken[2].value) {
             setUserNameValue('Пользователь 2')
             setIsModeratorValue(false)
         } else {
@@ -36,12 +36,14 @@ function App() {
 
     return (
         <div className="App">
-            <FlexRow>
+            <FlexRow style={{ marginBottom: 10 }}>
                 <div>username: {userName}</div>
             </FlexRow>
-            <FlexRow>
+            <FlexRow align="bottom" style={{ marginBottom: 10 }}>
                 <FlexColumn>
-                    <div>new username:</div>
+                    <FlexRow style={{ marginBottom: 10 }}>
+                        <div>new username:</div>
+                    </FlexRow>
                     <FlexRow>
                         <Select
                             defaultValue={optionsToken[1].value}
@@ -50,15 +52,7 @@ function App() {
                         />
                     </FlexRow>
                 </FlexColumn>
-            </FlexRow>
-
-            {/*<input*/}
-            {/*	value={userNameValue}*/}
-            {/*	onChange={e => setUserNameValue(e.target.value)}*/}
-            {/*></input>*/}
-
-            <FlexRow>
-                <FlexColumn>
+                <FlexColumn offset={1}>
                     <Button
                         onClick={() => {
                             setUserName(userNameValue)
@@ -68,11 +62,17 @@ function App() {
                     >
                         set user
                     </Button>
-
                 </FlexColumn>
-
             </FlexRow>
-            {jwt && <Chat jwt={jwt} isModerator={isModerator} userName={userName}/>}
+
+            {/*<input*/}
+            {/*	value={userNameValue}*/}
+            {/*	onChange={e => setUserNameValue(e.target.value)}*/}
+            {/*></input>*/}
+
+            {jwt && (
+                <Chat jwt={jwt} isModerator={isModerator} userName={userName} />
+            )}
         </div>
     )
 }

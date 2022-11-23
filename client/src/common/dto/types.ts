@@ -22,14 +22,13 @@ export type MessageType = {
 
 export type MessageTypeLikedByMe = MessageType & {isLikedByMe?: boolean}
 
-// export enum TypeWSMessage {
-//     CONNECT = 'connect',
-//     MESSAGE = 'message',
-//     LIKES = "likes",
-//     CONFIRMED_MESSAGE = 'confirmedMessage',
-//     REPLY_TO_MESSAGE = 'replyToMessage',
-//     REMOVE_MESSAGE = 'removeMessage',
-//     GET_MESSAGES = 'getMessages'
-// }
-
-export type TypeWSMessage = 'connect' | 'loadMoreMessages' | 'message' | 'likes' | 'confirmedMessage' | 'replyToMessage' | 'removeMessage' | 'getMessages'
+export enum TypeWSMessage {
+    CONNECT = 'connect',
+    MESSAGE = 'message',
+    LIKES = "likes",
+    CONFIRMED_MESSAGE = 'confirmedMessage',
+    REPLY_TO_MESSAGE = 'replyToMessage',
+    REMOVE_MESSAGE = 'removeMessage',
+    GET_MESSAGES = 'getMessages',
+    LOAD_MORE = 'loadMoreMessages'
+}

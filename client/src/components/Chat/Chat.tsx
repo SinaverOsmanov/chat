@@ -1,11 +1,11 @@
-import React, {useCallback, useEffect, useState} from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
-import type {RadioChangeEvent} from 'antd'
+import type { RadioChangeEvent } from 'antd'
 
-import {useChat} from '../../hooks/useChat'
-import {useInput} from '../../hooks/useInput'
+import { useChat } from '../../hooks/useChat'
+import { useInput } from '../../hooks/useInput'
 
-import {sortMessages} from '../../helpers/sortMessages'
+import { sortMessages } from '../../helpers/sortMessages'
 
 import MessageWrapper from '../MessageWrapper/MessageWrapper'
 import RadioGroup from '../RadioGroup'
@@ -13,46 +13,64 @@ import RadioGroup from '../RadioGroup'
 import Select from '../ui/Select/Select'
 import Input from '../ui/Input/Input'
 import Tabs from '../ui/Tabs'
-import {Button, SendButton} from '../ui/Button/Button'
+import { Button, SendButton } from '../ui/Button/Button'
 import Icon from '../ui/Icon'
+import { send } from '../../assets/svg'
+import {
+    ChatStyle,
+    DialogLayout,
+    DialogWrapper,
+    LoadMoreWrapper,
+} from './style'
+import { Loading } from '../ui/Loading'
+import { items, options } from '../../constants'
+import { FlexColumn, FlexRow } from 'helpers/layoutStyle'
+import { Title } from '../ui/Title'
+import { MessageTypeLikedByMe, TypeWSMessage } from '../../common/dto/types'
 
-import {MessageType} from '../../../../common/dto/types'
-import {send} from '../../assets/svg'
-import {ChatStyle, DialogLayout, DialogWrapper, LoadMoreWrapper} from './style'
-import {Loading} from '../ui/Loading'
-import {items, options} from '../../constants'
-import {FlexColumn, FlexRow} from 'helpers/layoutStyle'
-import {useScroll} from '../../hooks/useScroll'
-import {Title} from '../ui/Title'
+type ChatTypeProps = { jwt: string; isModerator: boolean; userName: string }
 
-type ChatTypeProps = { jwt: string, isModerator: boolean, userName: string }
-
-export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
+export function Chat({ jwt, isModerator, userName }: ChatTypeProps) {
     const [selectedSort, setSelectedSort] = useState('asc')
     const [selectedSender, setSelectedSender] = useState('anonym')
     const [tab, setTab] = useState('all')
     const [isHaveMessages, setIsHaveMessages] = useState(false)
-    const [messages, setMessages] = useState<MessageType[]>([])
+    const [messages, setMessages] = useState<MessageTypeLikedByMe[]>([])
     const messageInput = useInput('')
 
     // TODO: Scroll
     // const scroll = useScroll({ messages: messages })
 
-    const {messageHistory, connectionStatus, sendMessageClick, isAllMessages} = useChat(jwt)
+    const {
+        messageHistory,
+        connectionStatus,
+        sendMessageClick,
+        isAllMessages,
+    } = useChat(jwt)
 
     function getTabItems(isModerator: boolean) {
         return isModerator
-            ? [...items, {label: 'Не подтвержденные', key: 'unconfirmed', children: ''}]
+            ? [
+                  ...items,
+                  {
+                      label: 'Не подтвержденные',
+                      key: 'unconfirmed',
+                      children: '',
+                  },
+              ]
             : items
     }
 
     function loadMoreMessages() {
-        if(messages.length > 0) {
+        if (messages.length > 0) {
             sendMessageClick({
-                firstMessage: messages[0]._id,
-                lengthMessages: messages.length,
-                filter:tab
-            }, 'loadMoreMessages')
+                data: {
+                    firstMessage: messages[0]._id,
+                    lengthMessages: messages.length,
+                    filter: tab,
+                },
+                type: TypeWSMessage.LOAD_MORE,
+            })
         }
     }
 
@@ -64,15 +82,14 @@ export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
 
     function sendMessage() {
         if (messageInput.value !== '') {
-            const senderName =
-                selectedSender === 'anonym' ? 'Аноним' : userName
+            const senderName = selectedSender === 'anonym' ? 'Аноним' : userName
 
             const data = {
                 sender: isModerator ? 'Модератор' : senderName,
                 text: messageInput.value,
             }
 
-            sendMessageClick(data)
+            sendMessageClick({ data: data, type: TypeWSMessage.MESSAGE })
             messageInput.onReset()
         }
     }
@@ -83,11 +100,11 @@ export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
         []
     )
     const selectedSenderCallback = useCallback(
-        ({target}: RadioChangeEvent) => setSelectedSender(target.value),
+        ({ target }: RadioChangeEvent) => setSelectedSender(target.value),
         []
     )
 
-    useEffect(()=>{
+    useEffect(() => {
         setIsHaveMessages(isAllMessages)
     }, [isAllMessages])
 
@@ -102,12 +119,17 @@ export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
 
     useEffect(() => {
         if (connectionStatus === 'Open') {
-            sendMessageClick({filter: tab}, 'getMessages')
+            sendMessageClick({
+                data: {
+                    filter: tab,
+                },
+                type: TypeWSMessage.GET_MESSAGES,
+            })
         }
     }, [tab])
 
     useEffect(() => {
-        const person = isModerator ? 'moderator' : 'anonym';
+        const person = isModerator ? 'moderator' : 'anonym'
         setSelectedSender(person)
     }, [isModerator])
 
@@ -125,13 +147,12 @@ export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
     // 	}
     // }, [messages.length, scroll])
 
-
     return (
         <ChatStyle>
             <FlexRow justify="center">
                 {connectionStatus === 'Open' && (
                     <FlexColumn flex={1}>
-                        <FlexRow justify="center" style={{marginBottom: 25}}>
+                        <FlexRow justify="center" style={{ marginBottom: 25 }}>
                             <Title level={2}>Вопросы</Title>
                         </FlexRow>
                         <FlexRow justify="space-between">
@@ -156,9 +177,14 @@ export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
                         </FlexRow>
                         <DialogLayout>
                             <FlexColumn flex={1}>
-                                {!isHaveMessages && (tab === 'all'|| tab === 'my') && <LoadMoreWrapper>
-                                    <Button onClick={loadMoreMessages}>Загрузить ещё</Button>
-                                </LoadMoreWrapper>}
+                                {isHaveMessages &&
+                                    (tab === 'all' || tab === 'my') && (
+                                        <LoadMoreWrapper>
+                                            <Button onClick={loadMoreMessages}>
+                                                Загрузить ещё
+                                            </Button>
+                                        </LoadMoreWrapper>
+                                    )}
                                 <DialogWrapper className={'scroll'}>
                                     <FlexColumn className={'scrollHeight'}>
                                         {messages.map(message => {
@@ -194,9 +220,9 @@ export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
                                         />
                                     </FlexColumn>
                                 </FlexRow>
-                                <FlexRow style={{marginTop: 5}}>
+                                <FlexRow style={{ marginTop: 5 }}>
                                     <FlexColumn span={21}>
-                                        <FlexRow style={{height: 50}}>
+                                        <FlexRow style={{ height: 50 }}>
                                             <Input
                                                 onKeyDown={keyPressEnter}
                                                 placeholder={'Введите вопрос'}
@@ -207,7 +233,10 @@ export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
                                     <FlexColumn span={2} offset={1}>
                                         <FlexRow align={'middle'}>
                                             <SendButton onClick={sendMessage}>
-                                                <Icon icon={send} color={'#fff'}/>
+                                                <Icon
+                                                    icon={send}
+                                                    color={'#fff'}
+                                                />
                                             </SendButton>
                                         </FlexRow>
                                     </FlexColumn>
@@ -217,7 +246,7 @@ export function Chat({jwt, isModerator, userName}: ChatTypeProps) {
                     </FlexColumn>
                 )}
                 {connectionStatus === 'Closed' && 'Чат закрыт'}
-                {connectionStatus === 'Connecting' && <Loading/>}
+                {connectionStatus === 'Connecting' && <Loading />}
             </FlexRow>
         </ChatStyle>
     )

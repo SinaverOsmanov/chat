@@ -1,17 +1,10 @@
-import { WsMessage } from '../../../common/dto/dto'
+import { WsClientMessage } from '../common/dto/dto'
 
-export function parseMessage(data: string): WsMessage {
-	const r: WsMessage = JSON.parse(data)
-	if (typeof r.type !== 'string') {
-		throw new Error()
-	}
+export function parseMessage(data: string): WsClientMessage {
+    const r: WsClientMessage = JSON.parse(data)
+    if (typeof r.type !== 'string') {
+        throw new Error()
+    }
 
-	return r
+    return r
 }
-
-//
-// function messageDatesDto(message: any): MessageType {
-// 	return {
-//
-// 	}
-// }

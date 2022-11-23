@@ -1,11 +1,13 @@
-import {messageDto} from "./transferObject";
-import {MessageType, ModeratorMessageType, TypeWSMessage} from "../../../common/dto/types";
-import {LikeMessage, RemoveMessage} from "../../../common/dto/dto";
+import { messageDto } from './transferObject'
+import {
+    MessageType,
+    ModeratorMessageType,
+    TypeWSMessage,
+} from '../common/dto/types'
+import { LikeMessage, RemoveMessage, WsClientMessage } from '../common/dto/dto'
 
-type setDataTypeProps = {
-    type: TypeWSMessage,
-    data: any,
-    messages: MessageType[],
+export type setDataTypeProps = WsClientMessage & {
+    messages: MessageType[]
 }
 
 class WebSocketServices {
@@ -14,9 +16,7 @@ class WebSocketServices {
     }
 
     findById(id: string) {
-        return this.messages.find(
-            message => message._id === id
-        )
+        return this.messages.find(message => message._id === id)
     }
 
     setMessage(message: MessageType) {
@@ -44,7 +44,9 @@ class WebSocketServices {
     }
 
     removeById(data: RemoveMessage) {
-        const filteredMessages = this.messages.filter((m) => m._id !== data.messageId)
+        const filteredMessages = this.messages.filter(
+            m => m._id !== data.messageId
+        )
         return this.setMessages(filteredMessages)
     }
 
@@ -61,42 +63,44 @@ class WebSocketServices {
         return this.getMessages()
     }
 
-    replyToMessage(data: ModeratorMessageType){
+    replyToMessage(data: ModeratorMessageType) {
         const foundMessage = this.findById(data.messageId)
         if (foundMessage) {
-            foundMessage.answer = {...data, created: new Date(data.created)}
+            foundMessage.answer = { ...data, created: new Date(data.created) }
         }
 
         return this.getMessages()
     }
 
-    loadMoreMessages(data: {messages: MessageType[], isHaveMessages: boolean }) {
-
-        const withLoadedMessages = [...data.messages, ...this.messages]
+    loadMoreMessages(messages: MessageType[]) {
+        const withLoadedMessages = [...messages, ...this.messages]
         return this.setMessages(withLoadedMessages)
     }
 }
 
-export function getDataByType({type, data, messages}: setDataTypeProps): MessageType[] {
-
+export function getDataByType({
+    type,
+    data,
+    messages,
+}: setDataTypeProps): MessageType[] {
     const ws = new WebSocketServices(messages)
 
-    if (type === 'connect') {
-        return ws.setMessages(data)
-    } else if (type === 'getMessages') {
-        return ws.setMessages(data)
-    } else if (type === 'message') {
+    if (type === TypeWSMessage.CONNECT) {
+        return ws.setMessages(data.messages)
+    } else if (type === TypeWSMessage.GET_MESSAGES) {
+        return ws.setMessages(data.messages)
+    } else if (type === TypeWSMessage.MESSAGE) {
         return ws.setMessage(data)
-    } else if (type === 'likes') {
+    } else if (type === TypeWSMessage.LIKES) {
         return ws.setLike(data)
-    } else if (type === 'replyToMessage') {
+    } else if (type === TypeWSMessage.REPLY_TO_MESSAGE) {
         return ws.replyToMessage(data)
-    } else if (type === 'removeMessage') {
+    } else if (type === TypeWSMessage.REMOVE_MESSAGE) {
         return ws.removeById(data)
-    } else if (type === 'confirmedMessage') {
+    } else if (type === TypeWSMessage.CONFIRMED_MESSAGE) {
         return ws.setConfirmed(data)
-    } else if (type === 'loadMoreMessages') {
-        return ws.loadMoreMessages(data)
+    } else if (type === TypeWSMessage.LOAD_MORE) {
+        return ws.loadMoreMessages(data.messages)
     } else {
         return ws.getMessages()
     }

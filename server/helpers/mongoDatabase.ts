@@ -20,5 +20,3 @@ export async function ensureTypeDatabase(db: Db): Promise<ApplicationDb> {
     likes: db.collection("likes"),
   };
 }
-
-export function messageAPI(){}
